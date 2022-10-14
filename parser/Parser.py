@@ -1,38 +1,21 @@
 import requests
-URL = "https://www.forbes.com/sites/siladityaray/2022/10/14/food-giant-danone-to-exit-russia-taking-a-nearly-1-billion-hit/?sh=6cc27cca796f"
-req = requests.get(URL)
-# print(req.content)
 from bs4 import BeautifulSoup
 import pandas as pd
+URL = "https://www.forbes.com/sites/siladityaray/2022/10/14/food-giant-danone-to-exit-russia-taking-a-nearly-1-billion-hit/?sh=6cc27cca796f"
+'''
+URL test
+'''
+# req = requests.get(URL)
+# print(req.content)
 
-
-# soup = BeautifulSoup(req.text, 'html.parser')
-# print(soup.prettify())
-
-
-# # Get the text from the page#
-# for text in soup.find_all('p'):
-#     print(text.text)
-# # Get the h2 titles from the page#
-# for text in soup.find_all('h2'):
-#     print(text.text)
-# # Get the h1 titles from the page (main title)#
-# for text in soup.find_all('h1'):
-#     print(text.text)
-# # Get the links as well as the titles of each link#
-# for link in soup.find_all('a'):
-#     print(link.text)
-#     print(link.get('href'))
-
-
-# table=soup.find('div',attrs={'href'})
-# print(table)
-
+'''
+Parser class fetch
+'''
 class fetch:
     def __init__(self, url):
         req = requests.get(URL)
         self._encoding = BeautifulSoup(req.text, 'html.parser')
-
+        
     # Get the text from the page#
     def text(self):
         webtext = ''
@@ -51,25 +34,40 @@ class fetch:
         url_df = pd.DataFrame(url_list)
         return url_df
 
-    # Get the h1 titles from the page (main title) and the h2 titles#
+    # Get the h1 titles from the page (main title), the h2 titles (contents) and the div title (probably the same as the h1)#
     def titles(self, h):
         htext = []
+        '''
+        Titles according to h:
+        '''
+        #h1 title
         if h == 1:
             for text in self._encoding.find_all('h1'):
+                #error exception in case there is no title
                 htext.append(text.text)
+        #h2 titles
         elif h == 2:
             for text in self._encoding.find_all('h2'):
+                #error exception in case there is no title
                 htext.append(text.text)
+        #div title
         elif h == 0:
+            #error exception in case there is no title
             htext = self._encoding.title.string
         else:
             raise ValueError('Represents h1 or h2 (gets only 1,2 as values for the headers and 0 for the title)')
         return htext
 
+    #Get the date of the article (if it exists)
     def date(self):
         meta = self._encoding.find_all('meta')
         published_date = []
         modified_date = []
+        #meta should be global function
+        '''
+        Many pages use meta tags for dates, authors and keywords. Assuming that the property of the date meta tag, will contain
+        the word 'published' and 'modified' we use it as a leverage to fetch the date.
+        '''
         for tag in meta:
             if 'property' in tag.attrs.keys():
                 if tag.attrs['property'].strip().lower().find('published') > 0:
@@ -77,6 +75,8 @@ class fetch:
                 elif tag.attrs['property'].strip().lower().find('modified') > 0:
                     modified_date.append(tag.attrs['content'])
         return published_date, modified_date
+    
+    
 
     def tags(self):
         meta = self._encoding.find_all('meta')
