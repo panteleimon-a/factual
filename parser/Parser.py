@@ -1,11 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-URL = "https://www.forbes.com/sites/siladityaray/2022/10/14/food-giant-danone-to-exit-russia-taking-a-nearly-1-billion-hit/?sh=6cc27cca796f"
+URL1 = "https://www.forbes.com/sites/siladityaray/2022/10/14/food-giant-danone-to-exit-russia-taking-a-nearly-1-billion-hit/?sh=6cc27cca796f"
 '''
 URL test
 '''
-# req = requests.get(URL)
+# req = requests.get(URL1)
 # print(req.content)
 
 '''
@@ -13,7 +13,7 @@ Parser class fetch
 '''
 class fetch:
     def __init__(self, url):
-        req = requests.get(URL)
+        req = requests.get(url)
         self._encoding = BeautifulSoup(req.text, 'html.parser')
         
     # Get the text from the page#
@@ -76,7 +76,6 @@ class fetch:
                     modified_date.append(tag.attrs['content'])
         return published_date, modified_date
     
-    
 
     def tags(self):
         meta = self._encoding.find_all('meta')
@@ -96,7 +95,7 @@ class fetch:
         class_list = set()
         # iterate all tags
         for tag in tags:
-            # find all element of tag
+            # find all elements of tag
             for i in self._encoding.find_all(tag):
                 # if tag has attribute of class
                 if i.has_attr("class"):
@@ -118,11 +117,32 @@ class fetch:
 
 ##TEST##
 
-text = fetch(URL).text()
-title0 = fetch(URL).titles(0)
-title1 = fetch(URL).titles(1)
-title2 = fetch(URL).titles(2)
-date = fetch(URL).date()
-tags = fetch(URL).tags()
-urls = fetch(URL).urls()
-author = fetch(URL).author()
+text = fetch(URL1).text()
+title0 = fetch(URL1).titles(0)
+title1 = fetch(URL1).titles(1)
+title2 = fetch(URL1).titles(2)
+date = fetch(URL1).date()
+tags = fetch(URL1).tags()
+urls = fetch(URL1).urls()
+author = fetch(URL1).author()
+
+import googlesearch as gs
+print('check')
+import re
+sitelist = list(gs.search(title0,num_results=8,lang='en',advanced=False))
+titlelist=[]
+for i in sitelist:
+    titlelist.append(fetch(i).titles(0))
+no_punct0 = re.sub(r"([^a-zA-Z0-9])", ' ',title0)
+no_punct=[]
+for text in titlelist:
+    no_punct.append(re.sub(r"([^a-zA-Z0-9])", ' ',text))
+wordlist=[text.split() for text in no_punct]
+wordlist.append(no_punct0.split(sep=" "))
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+wordlistfl=flatten(wordlist)
+from collections import Counter
+Counter = Counter(wordlistfl)
+most_occur = Counter.most_common(4)
+print(most_occur)
