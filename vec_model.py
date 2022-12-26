@@ -1,25 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-class for word vectorization
+Word vectorization model
+
+requirements:
+fasttext-langdetect
+fasttext
+
 """
-import pandas as pd
-from _io import BytesIO
-from _io import *
-from zipfile import ZipFile
-from urllib.request import urlopen
-import _io as io
 import fasttext
-from parser.temp import load_vectors
+import fasttext.util
+import pandas as pd
+fasttext.util.download_model('en', if_exists='ignore')  # English
+fasttext.util.download_model('gr', if_exists='ignore')  # Greek
+ft_en = fasttext.load_model('cc.en.300.bin')          
+ft_en.get_dimension()
+ft_gr = fasttext.load_model('cc.gr.300.bin')  
+ft_gr.get_dimension()
+'''
+Reduce vectors dimension
 
-class vec_model:
-    def __init__(self):
-        print("Vectorization model is getting trained")
-    @property
-    def train_vec(self):
-        URL=urlopen('https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip')
-        """These word vectors are distributed under the Creative Commons Attribution-Share-Alike License 3.0"""
-        data=ZipFile(BytesIO(URL.read()))
-        f=data.extractall
-        dataset=load_vectors(f)
-        return dataset
+#fasttext.util.reduce_model(ft, 100)
+#ft_en.get_dimension()
 
+Test Nearest Neighbors
+
+#ft_en.get_word_vector('hello').shape
+#ft_en.get_nearest_neighbors('hello')
+'''
+class tovec:
+    def __init__(self, wordlistfl):
+        result = detect(text=wordlistfl, low_memory=False)
+        return result[0][0]
+        
