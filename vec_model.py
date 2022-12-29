@@ -11,6 +11,11 @@ sklearn
 python -m spacy download el_core_news_sm
 python -m spacy download en_core_web_sm
 nltk
+kaggle
+regex
+itertools
+emoji
+word2vec
 
 """
 import fasttext
@@ -42,8 +47,8 @@ Reduce vectors dimension
 
 Test Nearest Neighbors
 
-#ft_en.get_word_vector('hello').shape
-#ft_en.get_nearest_neighbors('hello')
+#ft.get_word_vector('hello').shape
+#ft.get_nearest_neighbors('hello')
 '''
 import spacy
 from spacy.lang.en import English, Greek
@@ -123,6 +128,64 @@ tokens = list(bigram[text])
 tokens=list_of_lists(article,stop_words)
 #print(list_of_lists(article,stop_words))
 
+if detector(article)=="el":
+    #eglish contractions
+    #make sure .kaggle authentication file is in workspace 
+    from kaggle.api.kaggle_api_extended import KaggleApi
+    api = KaggleApi()
+    api.authenticate()
+    '''#or, use os method
+    import os
+
+    os.environ['KAGGLE_USERNAME'] = 'YOUR_USERNAME'
+    os.environ['KAGGLE_KEY'] = 'YOUR_KEY'
+
+    from kaggle.api.kaggle_api_extended import KaggleApi
+
+    api = KaggleApi()
+    api.authenticate()'''
+    api.dataset_download_files('ishivinal/contractions')
+    from zipfile import ZipFile
+    zf = ZipFile('/Users/pante/factual/contractions.zip')
+    #extracted data is saved in the same directory
+    zf.extractall() 
+    zf.close()
+    import pandas as pd
+    CONTRACTIONS = pd.read_csv('/Users/pante/factual/contractions.csv').values.to_string()
+else:
+    CONTRACTIONS=[] #Greek contractions in progress
+
+import regex
+import itertools
+'''
+#Strip accents: Limited for English but widely used for other languages, accents are often misplaced or forgotten. The easiest way to deal with them is to get rid of them.
+def strip_accents(text):
+    if 'ø' in text or  'Ø' in text:
+        #Do nothing when finding ø 
+        return text   
+    text = text.encode('ascii', 'ignore')
+    text = text.decode("utf-8")
+    return str(text)
+'''
+import emoji
+def clean_data(tweet):
+    #CONTRACTIONS is a list of contractions and slang and their conversion. { "you've":"you have", "luv":"love", etc...}
+    tweet = tweet.replace("’","'")
+    words = tweet.split()
+    reformed = [CONTRACTIONS[word] if word in CONTRACTIONS else word for word in words]
+    tweet = " ".join(reformed)
+    '''
+    Utility function to clean tweet text by removing links, special characters
+    using simple regex statements.
+    '''
+    tweet = ''.join(''.join(s)[:2] for _, s in itertools.groupby(tweet))
+    tweet = emoji.demojize(tweet)
+    return ' '.join(regex.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+    
+
+tokens=clean_data(" ".join(str(x) for x in tokens))
+tokens=tokens.split(" ")
+
 def vector(tokens,ft):
     text_tensor=[]
     for i in tokens:
@@ -130,7 +193,19 @@ def vector(tokens,ft):
         text_tensor.append(vec)
     return text_tensor
 text_tensor=vector(tokens,ft)
-#print(text_tensor)
+print(text_tensor)
 #Test vector model efficiency
 #en_model = KeyedVectors.load_word2vec_format('wiki-news-300d-1M.vec')
 #ret_vals = en_model.similar_by_vector(text_tensor[i])
+
+#Categorize vectors of a fasttext pretrained on 1m wiki-news words model in 2 clusters
+from sklearn.cluster import KMeans
+import numpy as np
+from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
+word_vectors = KeyedVectors.load_word2vec_format("/Users/pante/factual/wiki-news-300d-1M.vec").wv
+model = KMeans(n_clusters=2, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors)
+positive_cluster_center = model.cluster_centers_[0]
+negative_cluster_center = model.cluster_centers_[1]
+
+#cosin distance of our text with the clusters
