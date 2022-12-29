@@ -203,8 +203,8 @@ from sklearn.cluster import KMeans
 import numpy as np
 from gensim.models import Word2Vec
 from gensim.models import KeyedVectors
-word_vectors = KeyedVectors.load_word2vec_format("/Users/pante/factual/wiki-news-300d-1M.vec").wv
-model = KMeans(n_clusters=2, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors)
+#model = KeyedVectors.load_word2vec_format("/Users/pante/factual/wiki-news-300d-1M.vec")
+model = KMeans(n_clusters=2, max_iter=1000, random_state=True, n_init=50).fit(X=model.vectors)
 positive_cluster_center = model.cluster_centers_[0]
 negative_cluster_center = model.cluster_centers_[1]
 
