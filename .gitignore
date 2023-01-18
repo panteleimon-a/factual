@@ -36,5 +36,8 @@
 *.npy
 *.bz2
 
+# Vectors
+*.vec
+
 #Data
 *.csv
