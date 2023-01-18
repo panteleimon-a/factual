@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# Models
+*.bin
+*.npy
+*.bz2
+
+#Data
+*.csv
