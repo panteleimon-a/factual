@@ -4,15 +4,28 @@ import logging
 import os
 import jieba
 import wiki as w
+from gensim.corpora.wikicorpus import WikiCorpus, tokenize
 from gensim.models.fasttext import FastText
-from gensim.models.word2vec import Word2Vec
+from gensim.models.word2vec import Word2Vec, LineSentence
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from tqdm import tqdm
 import multiprocessing
 import pandas as pd
+from bs4 import BeautifulSoup
+from gensim.test.utils import datapath, simple_preprocess
+import smart_open
 
-WIKIXML = '/Users/pante/factual/archive/w2v_model/data/enwiki-20230101-pages-articles-multistream1.xml-p1p41242.bz2'
+WIKIXML = "/Users/pante/Git_Repositories/factual/training/enwiki-20230101-pages-articles-multistream1.xml-p1p41242.bz2"
 
-from gensim.corpora.wikicorpus import WikiCorpus
+def read_corpus(fname, tokens_only=False):
+    with smart_open.open(fname, encoding="iso-8859-1") as f:
+        for i, line in enumerate(f):
+            tokens = simple_preprocess(line)
+            if tokens_only:
+                yield tokens
+            else:
+                # For training data, add tags
+                yield TaggedDocument(tokens, [i])
 
 class WikiSentences:
     def __init__(self, wiki_dump_path, lang):
@@ -21,11 +34,11 @@ class WikiSentences:
         self.lang = lang
 
     def __iter__(self):
-        for sentence in self.wiki.get_texts():
+        for doc in self.wiki.get_texts():
             if self.lang == 'zh':
-                yield list(jieba.cut(''.join(sentence), cut_all=False))
+                yield list(jieba.cut(''.join(read_corpus(doc)), cut_all=False))
             else:
-                yield list(sentence)
+                yield list(read_corpus(doc))
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train embedding')
@@ -38,9 +51,15 @@ def get_args():
 
 def main():
     args = get_args()
-
     # parse wiki dump
-    wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), args.lang)
+    if args.model == 'word2vec'or args.model=='fasttext':
+        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
+    elif args.model == 'doc2vec':
+    #read object containing corpuses as TaggedDocuments elements
+        #train_corpus=[tagged_doc for tagged_doc in read_corpus(WIKIXML)]
+        wiki_sentences=read_corpus(WIKIXML)
+        train_corpus=[tagged_doc for tagged_doc in wiki_sentences]
+    #count system cores to define workers
     cores = multiprocessing.cpu_count()
     logging.info('Training model %s', args.model)
     if args.model == 'word2vec':
@@ -48,14 +67,23 @@ def main():
     elif args.model == 'fasttext':
         args.output='en_wiki_word2vec_300.bin'
         model = FastText(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 1,workers=cores-1)
+    elif args.model == 'doc2vec':
+        args.output='en_wiki_doc2vec_300.bin'
+        max_epochs = 1000
+        vec_size = 300
+        alpha = 0.03
+        model = Doc2Vec(dbow_words=1,dm_mean=0,window=4,vector_size=vec_size, alpha=alpha, min_alpha=0.0007, dm=0, workers=cores-1, epochs=max_epochs)
+        model.build_vocab(train_corpus)
+        model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
     else:
-        logging.info('Unknown model %s, should be "word2vec" or "fasttext"', args.model)
+        logging.info('Unknown model %s, should be "word2vec" or "fasttext" or "doc2vec"', args.model)
         return
     logging.info('Training done.')
 
     logging.info('Save trained word vectors')
+    
     if args.model == 'word2vec':
-        model.wv.save(args.output)#save vectors for word2vec
+        model.wv.save(args.output)#save vectors for word2vec/doc2vec
     else:
         model.save(args.output)
     logging.info('Done')
