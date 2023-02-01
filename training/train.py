@@ -36,9 +36,9 @@ class WikiSentences:
     def __iter__(self):
         for doc in self.wiki.get_texts():
             if self.lang == 'zh':
-                yield list(jieba.cut(''.join(read_corpus(doc)), cut_all=False))
+                yield list(jieba.cut(''.join(doc), cut_all=False))
             else:
-                yield list(read_corpus(doc))
+                yield list(doc)
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train embedding')
