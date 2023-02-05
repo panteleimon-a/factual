@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import re
 from pickle import FALSE
+
+
 def get_useragent():
  useragent_list = [
  "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.13 (KHTML, like Gecko) Chrome/24.0.1290.1 Safari/537.13",
@@ -12,6 +14,8 @@ def get_useragent():
  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.13 (KHTML, like Gecko) Chrome/24.0.1284.0 Safari/537.13",
  "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.6 Safari/537.11" ]
  return random.choice(useragent_list)
+
+
 class fetch:
     def __init__(self, url):
         # for proxy in proxies:

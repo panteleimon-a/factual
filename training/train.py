@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from gensim.test.utils import datapath, simple_preprocess
 import smart_open
 
-WIKIXML = "/Users/pante/Git_Repositories/factual/training/enwiki-20230101-pages-articles-multistream1.xml-p1p41242.bz2"
+WIKIXML = "/Users/pante/Git_Repositories/factual/enwiki-20230101-pages-articles-multistream1.xml-p1p41242.bz2"
 
 def read_corpus(fname, tokens_only=False):
     with smart_open.open(fname, encoding="iso-8859-1") as f:
@@ -51,28 +51,28 @@ def get_args():
 
 def main():
     args = get_args()
-    # parse wiki dump
-    if args.model == 'word2vec'or args.model=='fasttext':
-        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
-    elif args.model == 'doc2vec':
-    #read object containing corpuses as TaggedDocuments elements
-        #train_corpus=[tagged_doc for tagged_doc in read_corpus(WIKIXML)]
-        wiki_sentences=read_corpus(WIKIXML)
-        train_corpus=[tagged_doc for tagged_doc in wiki_sentences]
     #count system cores to define workers
     cores = multiprocessing.cpu_count()
     logging.info('Training model %s', args.model)
     if args.model == 'word2vec':
-        model = Word2Vec(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 1,workers=cores-1)
+        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
+        model = Word2Vec(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 0,workers=cores-1)
     elif args.model == 'fasttext':
-        args.output='en_wiki_word2vec_300.bin'
-        model = FastText(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 1,workers=cores-1)
+        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
+        args.output='cbow/en_wiki_fasttext_300.bin'
+        model = FastText(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 0,workers=cores-1)
     elif args.model == 'doc2vec':
-        args.output='en_wiki_doc2vec_300.bin'
-        max_epochs = 1000
+        #read object containing corpuses as TaggedDocuments elements
+        #train_corpus=[tagged_doc for tagged_doc in read_corpus(WIKIXML)]
+        wiki_sentences=read_corpus(WIKIXML)
+        train_corpus=[tagged_doc for tagged_doc in wiki_sentences]
+        args.output='cbow/en_wiki_doc2vec_300.bin'
+        max_epochs = 3
         vec_size = 300
         alpha = 0.03
-        model = Doc2Vec(dbow_words=1,dm_mean=0,window=4,vector_size=vec_size, alpha=alpha, min_alpha=0.0007, dm=0, workers=cores-1, epochs=max_epochs)
+        #dm=1 refers to PV-DM, while dm=0 refers to PV-DBOW
+        #dbow_words=1 skipgram
+        model = Doc2Vec(dbow_words=1,dm_mean=0,window=4,vector_size=vec_size, alpha=alpha, min_alpha=0.0007, dm=1, workers=cores-1, epochs=max_epochs)
         model.build_vocab(train_corpus)
         model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
     else:
