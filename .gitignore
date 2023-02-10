@@ -41,3 +41,8 @@
 
 #Data
 *.csv
+parser/.DS_Store
+.gitignore
+.DS_Store
+skipgram/en_wiki_word2vec_300.txt
+cbow/en_wiki_word2vec_300.txt
