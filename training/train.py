@@ -55,10 +55,10 @@ def main():
     cores = multiprocessing.cpu_count()
     logging.info('Training model %s', args.model)
     if args.model == 'word2vec':
-        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
+        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), args.lang)
         model = Word2Vec(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 0,workers=cores-1)
     elif args.model == 'fasttext':
-        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), 'en')
+        wiki_sentences = WikiSentences(WIKIXML.format(lang=args.lang), args.lang)
         args.output='cbow/en_wiki_fasttext_300.bin'
         model = FastText(wiki_sentences, min_count=4,window=4,vector_size=300, alpha=0.03, min_alpha=0.0007, sg = 0,workers=cores-1)
     elif args.model == 'doc2vec':

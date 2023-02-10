@@ -28,10 +28,8 @@ import unicodedata as ud
 import emoji
 import gcld3 as gcld
 from gensim import utils
-from gensim.utils import tokenize
+from gensim.utils import tokenize as tk
 from scipy import spatial
-tk=tokenize
-del(tokenize)
 
 #remove stop words and clean data
 
@@ -146,7 +144,7 @@ def sent_score(vec_article,positive_cluster_center,negative_cluster_center):
     else:
         return "Positive"
 
-'
+
 #using tensorflow / Source: https://www.projectpro.io/recipes/train-word2vec-model-tensorflow
 
 #Dictionary with words to correct text from slang, etc.
