@@ -21,6 +21,7 @@ word2vec
 import pandas as pd
 import numpy as np
 import regex
+import fasttext
 from nltk.corpus import stopwords
 from gensim.models import Word2Vec, KeyedVectors, FastText
 from tqdm.auto import tqdm
@@ -30,6 +31,7 @@ import gcld3 as gcld
 from gensim import utils
 from gensim.utils import tokenize as tk
 from scipy import spatial
+import io
 stopwords_list = stopwords.words("english")
 
 def clean_data(text):
@@ -44,6 +46,17 @@ def clean_data(text):
         a.append(final_list)
     return a
 
+#load fasttext vectors only for .txt vectors
+'''
+def load_vectors(fname):
+    fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
+    n, d = map(int, fin.readline().split())
+    data = {}
+    for line in fin:
+        tokens = line.rstrip().split(' ')
+        data[tokens[0]] = map(float, tokens[1:])
+    return data
+'''
 def change_lower(text):
     a=[]
     for sentence in text:
@@ -106,9 +119,8 @@ from gensim.models import KeyedVectors
 #word_vectors=KeyedVectors.load("/Users/pante/Git_Repositories/factual/skipgram/en_wiki_word2vec_300.txt")
 import gensim.downloader as api
 word_vectors = api.load("word2vec-google-news-300")  # download the model and return as object ready for use
-ft_model=KeyedVectors.load("/Users/pante/Git_Repositories/factual/skipgram/en_wiki_fasttext_300.bin")
-
-
+ft_model=KeyedVectors.load("/Users/pante/Git_Repositories/factual/cbow/en_wiki_fasttext_300.bin")
+ft_vectors = fasttext.load_model('/Users/pante/Git_Repositories/factual/cc.en.300.bin') 
 # K-Means (not operating with word-vectors)
 #optimize k
 from sklearn.cluster import KMeans
@@ -123,9 +135,17 @@ for i in range(1, clusters):
 ks=[i for i in range(0,clusters-1)]
 sns.lineplot(x = ks, y = wcss)
 
-model = KMeans(n_clusters=17, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors.vectors)
+model = KMeans(n_clusters=30, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors.vectors)
 positive_cluster_center = model.cluster_centers_[0]
-negative_cluster_center = model.cluster_centers_[16]
+negative_cluster_center = model.cluster_centers_[29]
+from numpy import (array, dot, arccos, clip)
+from numpy.linalg import norm
+c = dot(negative_cluster_center,positive_cluster_center)/norm(negative_cluster_center)/norm(positive_cluster_center) # -> cosine of the angle
+angle = arccos(clip(c, -1, 1)) # if you really want the angle
+np.linalg.norm(positive_cluster_center)
+np.linalg.norm(negative_cluster_center)
+np.angle([positive_cluster_center])
+np.angle([negative_cluster_center])
 #1-spatial.distance.cosine(negative_cluster_center,positive_cluster_center)
 #word_vectors.similar_by_vector(model.cluster_centers_[16], topn=100, restrict_vocab=None) #print top 10 words in cluster[9]
 
