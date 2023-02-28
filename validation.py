@@ -45,18 +45,6 @@ def clean_data(text):
         final_list= [word for word in final_list if len(word)>2]
         a.append(final_list)
     return a
-
-#load fasttext vectors only for .txt vectors
-'''
-def load_vectors(fname):
-    fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
-    n, d = map(int, fin.readline().split())
-    data = {}
-    for line in fin:
-        tokens = line.rstrip().split(' ')
-        data[tokens[0]] = map(float, tokens[1:])
-    return data
-'''
 def change_lower(text):
     a=[]
     for sentence in text:
@@ -102,25 +90,15 @@ def predict(df:object,positive_cluster_center:np.ndarray ,negative_cluster_cente
         scores.append(tweet_score(vec_tweet,positive_cluster_center,negative_cluster_center))
     return scores
 
-def pca_predict(df:object,positive_cluster_center:np.ndarray ,negative_cluster_center:np.ndarray, word_vectors:KeyedVectors, ft_model:FastText):    
-    scores=[]
-    #vectorize tweets
-    for tweet in tqdm(df):
-        vec_tweet=tweet_vec(tweet,word_vectors,ft_model)
-        val_word_power_transformed = pd.DataFrame(pt.transform(list(vec_tweet)))
-        val_word_power_scaled_transformed = pd.DataFrame(scaler.transform(val_word_power_transformed))
-        val_pca = pd.DataFrame(pca_train.fit_transform(val_word_power_scaled_transformed))
-        scores.append(tweet_score(val_pca,positive_cluster_center,negative_cluster_center))
-    return scores
 
 
 #load models
 from gensim.models import KeyedVectors
-#word_vectors=KeyedVectors.load("/Users/pante/Git_Repositories/factual/skipgram/en_wiki_word2vec_300.txt")
-import gensim.downloader as api
-word_vectors = api.load("word2vec-google-news-300")  # download the model and return as object ready for use
-ft_model=KeyedVectors.load("/Users/pante/Git_Repositories/factual/cbow/en_wiki_fasttext_300.bin")
-ft_vectors = fasttext.load_model('/Users/pante/Git_Repositories/factual/cc.en.300.bin') 
+word_vectors=KeyedVectors.load("/Users/pante/Git_Repositories/factual/skipgram/en_wiki_word2vec_300.txt")
+#import gensim.downloader as api
+#word_vectors = api.load("word2vec-google-news-300")  # download the model and return as object ready for use
+ft_model=KeyedVectors.load("/Users/pante/Git_Repositories/factual/skipgram/en_wiki_fasttext_300.bin")
+#ft_vectors = fasttext.load_model('/Users/pante/Git_Repositories/factual/cc.en.300.bin') 
 # K-Means (not operating with word-vectors)
 #optimize k
 from sklearn.cluster import KMeans
@@ -135,9 +113,19 @@ for i in range(1, clusters):
 ks=[i for i in range(0,clusters-1)]
 sns.lineplot(x = ks, y = wcss)
 
-model = KMeans(n_clusters=30, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors.vectors)
+# point where curv changes convexity
+kurt_point=70
+model = KMeans(n_clusters=kurt_point, max_iter=1000, random_state=True, n_init=50).fit(X=word_vectors.vectors)
 positive_cluster_center = model.cluster_centers_[0]
-negative_cluster_center = model.cluster_centers_[29]
+negative_cluster_center = model.cluster_centers_[kurt_point-1]
+
+# ensemble modelling
+kurt_point=60
+ensmbl_model=KMeans(n_clusters=kurt_point, max_iter=1000, random_state=True, n_init=50).fit(X=model.cluster_centers_)
+positive_cluster_center = ensmbl_model.cluster_centers_[0]
+negative_cluster_center = ensmbl_model.cluster_centers_[kurt_point-1]
+
+# info
 from numpy import (array, dot, arccos, clip)
 from numpy.linalg import norm
 c = dot(negative_cluster_center,positive_cluster_center)/norm(negative_cluster_center)/norm(positive_cluster_center) # -> cosine of the angle
@@ -149,112 +137,13 @@ np.angle([negative_cluster_center])
 #1-spatial.distance.cosine(negative_cluster_center,positive_cluster_center)
 #word_vectors.similar_by_vector(model.cluster_centers_[16], topn=100, restrict_vocab=None) #print top 10 words in cluster[9]
 
-#experimentation starts here
-
-
-import hdbscan
-from joblib import Memory
-import numpy as np
-from sklearn.neighbors import DistanceMetric
-metric = DistanceMetric.get_metric('mahalanobis', V=np.cov(word_vectors.vectors))
-clusterer = hdbscan.HDBSCAN(algorithm='best', alpha=1.0, approx_min_span_tree=True, gen_min_span_tree=False, leaf_size=40, memory=Memory(cachedir=None), metric=metric, min_cluster_size=4, min_samples=1, p=None)
-clusterer.fit(word_vectors.vectors) #this might be a ndarray 
-
-#The algorithm creates its own clusters
-#The amount of clusters it created:
-print(clusterer.labels_.max()+1)
-#These are the assigned clusters for each vector:
-print(clusterer.labels_)
-#In order to find the "centroids" we can use the probability of the vector to belong in the assigned cluster.
-print(clusterer.probabilities_)
-#the vectors with probability=1 should be on the center of the alleged centroids.
-centered_vectors={}
-i=0
-for prob in clusterer.probabilities_:
-    if prob=1: centered_vectors[vectors[i]]=clusterer.labels_[i]
-    i=i+1
-
-#I would expect more than one vector to have probability of one in a cluster. The Mahalanobis distance might has to do with that. It measure the distance of the vector and the distribution of the class. The algorithm works hierarchical, meaning that it begins taking the whole dataset as one class and then splits it according to the mahalanobis distance. I expect the forming of not many classes, but who knows at this point. There is the case where, the algorithm will disregard some vectors as noise, meaning that they are not contributing to the variance of none of the classes. They can be regarded as irrelevant or neutral.
-#Getting the "centroid" of the class can be tricky. However the mean of the keys of the above dictionary can give us a general centroid for each class.
-
-
-# PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import PowerTransformer
-from sklearn.decomposition import PCA
-
-# apply the power transformer
-
-pt = PowerTransformer().fit(word_vectors.vectors)
-word_power_transformed = pd.DataFrame(
-    pt.transform(word_vectors.vectors)
-)
-
-# apply a standard scaler
-scaler = StandardScaler().fit(word_power_transformed)
-word_power_scaled_transformed = pd.DataFrame(scaler.transform(word_power_transformed))
-
-#apply the PCA
-
-pca = PCA()
-pca.fit(word_power_scaled_transformed)
-#calculate the num of components based on #variance
-mean_var=pca.explained_variance_ratio_.mean()
-arr=pd.Series([var for var in pca.explained_variance_ratio_],dtype=float)
-common_var=arr.quantile(q=0.99,interpolation="higher")
-comps = len([c for c in list(pca.explained_variance_ratio_) if c>=common_var]) 
-pca_train = PCA(n_components = comps)
-df_pca_train = pd.DataFrame(
-    pca_train.fit_transform(word_power_scaled_transformed)
-    )
-
-#apply the k-means
-#optimize k
-from sklearn.cluster import KMeans
-wcss=[]
-import seaborn as sns
-clusters=30
-for i in range(1, clusters):
-    clustering= KMeans(n_clusters=i, init='k-means++', random_state=42)
-    clustering.fit(df_pca_train)
-    wcss.append(clustering.inertia_)
-    
-ks=[i for i in range(0,clusters-1)]
-sns.lineplot(x = ks, y = wcss)
-# point where curv changes convexity
-kurt_point=25
-model = KMeans(n_clusters=kurt_point, max_iter=1000, random_state=True, n_init=50).fit(X=df_pca_train)
-positive_cluster_center = model.cluster_centers_[0]
-negative_cluster_center = model.cluster_centers_[kurt_point-1]
 #validation 1
 val_df=pd.read_csv('/Users/pante/Git_Repositories/factual/data/twitter_validation.csv',low_memory=False)
 val_df=val_df.dropna(how='any')
 val_w2v_df=pd.DataFrame()
 val_w2v_df["text"]=val_df['I mentioned on Facebook that I was struggling for motivation to go for a run the other day, which has been translated by Tom’s great auntie as ‘Hayley can’t get out of bed’ and told to his grandma, who now thinks I’m a lazy, terrible person 🤣']
 val_w2v_df["sentiment"]=val_df['Irrelevant']
-#preprocessing
-val_w2v_df["text"]=change_lower(val_w2v_df["text"])
-val_w2v_df["text"]=val_w2v_df["text"].apply(tok)
-val_w2v_df["text"]=clean_data(val_w2v_df["text"])
-y_input=val_w2v_df["sentiment"]
-y_predict=pca_predict(val_w2v_df["text"],positive_cluster_center=positive_cluster_center,negative_cluster_center=negative_cluster_center, word_vectors=word_vectors, ft_model=ft_model)
-print("Accuracy:",(y_predict == y_input).sum()/len(y_input))
-
-
-#experimentation ends here
-
-
-
-
-
-
-#validation 1
-val_df=pd.read_csv('/Users/pante/Git_Repositories/factual/data/twitter_validation.csv',low_memory=False)
-val_df=val_df.dropna(how='any')
-val_w2v_df=pd.DataFrame()
-val_w2v_df["text"]=val_df['I mentioned on Facebook that I was struggling for motivation to go for a run the other day, which has been translated by Tom’s great auntie as ‘Hayley can’t get out of bed’ and told to his grandma, who now thinks I’m a lazy, terrible person 🤣']
-val_w2v_df["sentiment"]=val_df['Irrelevant']
-#preprocessing
+    #preprocessing
 val_w2v_df["text"]=change_lower(val_w2v_df["text"])
 val_w2v_df["text"]=val_w2v_df["text"].apply(tok)
 val_w2v_df["text"]=clean_data(val_w2v_df["text"])
@@ -268,10 +157,10 @@ train_df=pd.read_csv('/Users/pante/Git_Repositories/factual/data/twitter_trainin
 train_df.dropna(how='any',inplace=True)
 train_df.reset_index(inplace=True)
 train_df.drop(columns=['index'], inplace=True)
-#preprocessing
+    #preprocessing
 train_df["text"]=change_lower(train_df["text"])
 train_df["text"]=train_df["text"].apply(tok)
 train_df["text"]=clean_data(train_df["text"])
 y_train=train_df["sentiment"]
 y_predict=predict(train_df["text"],positive_cluster_center=positive_cluster_center,negative_cluster_center=negative_cluster_center, word_vectors=word_vectors, ft_model=ft_model)
-print("Accuracy:",(y_predict == y_train).sum()/len(y_input))
+print("Accuracy:",(y_predict == y_train).sum()/len(y_train))
