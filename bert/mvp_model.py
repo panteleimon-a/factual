@@ -1,6 +1,5 @@
 #newBert_newMe
 import torch
-!pip install transformers
 import tensorflow as tf
 import pandas as pd
 from transformers import BertTokenizer, TFBertForSequenceClassification
@@ -35,8 +34,8 @@ print(os.listdir(train_dir))
 # We create a training dataset and a validation 
 # dataset from our "aclImdb/train" directory with a 80/20 split.
 train = tf.keras.preprocessing.text_dataset_from_directory(
-    './aclImdb/train', batch_size=30000, validation_split=0.2, 
-    subset='training', seed=123)
+      './aclImdb/train', batch_size=30000, validation_split=0.2, 
+      subset='training', seed=123)
 test = tf.keras.preprocessing.text_dataset_from_directory(
     './aclImdb/train', batch_size=30000, validation_split=0.2, 
     subset='validation', seed=123)
@@ -59,10 +58,7 @@ test.columns = ['DATA_COLUMN', 'LABEL_COLUMN']
 test['DATA_COLUMN'] = test['DATA_COLUMN'].str.decode("utf-8")
 test.head()
 
-InputExample(guid=None,
-             text_a = "Hello, world",
-             text_b = None,
-             label = 1)
+InputExample(guid=None,text_a = "Hello, world",text_b = None,label = 1)
 
 def convert_data_to_examples(train, test, DATA_COLUMN, LABEL_COLUMN): 
   train_InputExamples = train.apply(lambda x: InputExample(guid=None,text_a = x[DATA_COLUMN],text_b = None,label = x[LABEL_COLUMN]),axis = 1)
