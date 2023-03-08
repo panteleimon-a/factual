@@ -53,7 +53,6 @@ class preproc:
         self.train = pd.DataFrame([self.train_feat, self.train_lab]).T
         self.train.columns = ['DATA_COLUMN', 'LABEL_COLUMN']
         self.train['DATA_COLUMN'] = train['DATA_COLUMN'].str.decode("utf-8")
-        self.train.head()
 
         for j in self.test.take(1):
             self.test_feat = j[0].numpy()
@@ -62,7 +61,6 @@ class preproc:
         self.test = pd.DataFrame([test_feat, test_lab]).T
         self.test.columns = ['DATA_COLUMN', 'LABEL_COLUMN']
         self.test['DATA_COLUMN'] = test['DATA_COLUMN'].str.decode("utf-8")
-        self.test.head()
 
         return self
 
