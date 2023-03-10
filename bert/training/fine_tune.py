@@ -24,6 +24,9 @@ from transformers import InputExample, InputFeatures
 URL = "https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
 fname="aclImdb_v1.tar.gz"
 
+# tokenizer
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
 class preproc:
     def __init__(self, fname):
         logging.info('Loading training dataset')
@@ -41,26 +44,23 @@ class preproc:
         return self
     
     def preproc(self):
-        self.train = tf.keras.preprocessing.text_dataset_from_directory('./aclImdb/train', batch_size=30000, validation_split=0.2, 
-                                                                   subset='training', seed=123)
-        self.test = tf.keras.preprocessing.text_dataset_from_directory(
-            './aclImdb/train', batch_size=30000, validation_split=0.2, subset='validation', seed=123
-            )
+        self.train = tf.keras.preprocessing.text_dataset_from_directory('./aclImdb/train', batch_size=30000, validation_split=0.2, subset='training', seed=123)
+        self.test = tf.keras.preprocessing.text_dataset_from_directory('./aclImdb/train', batch_size=30000, validation_split=0.2, subset='validation', seed=123)
         for i in self.train.take(1):
             self.train_feat = i[0].numpy()
             self.train_lab = i[1].numpy()
 
         self.train = pd.DataFrame([self.train_feat, self.train_lab]).T
         self.train.columns = ['DATA_COLUMN', 'LABEL_COLUMN']
-        self.train['DATA_COLUMN'] = train['DATA_COLUMN'].str.decode("utf-8")
+        self.train['DATA_COLUMN'] = self.train['DATA_COLUMN'].str.decode("utf-8")
 
         for j in self.test.take(1):
             self.test_feat = j[0].numpy()
             self.test_lab = j[1].numpy()
         
-        self.test = pd.DataFrame([test_feat, test_lab]).T
+        self.test = pd.DataFrame([self.test_feat, self.test_lab]).T
         self.test.columns = ['DATA_COLUMN', 'LABEL_COLUMN']
-        self.test['DATA_COLUMN'] = test['DATA_COLUMN'].str.decode("utf-8")
+        self.test['DATA_COLUMN'] = self.test['DATA_COLUMN'].str.decode("utf-8")
 
         return self
 
@@ -69,11 +69,8 @@ class preproc:
         self.validation_InputExamples = self.test.apply(lambda x: InputExample(guid=None,text_a = x[DATA_COLUMN],text_b = None,label = x[LABEL_COLUMN]),axis = 1)
         return self.train_InputExamples, self.validation_InputExamples
 
-        train_InputExamples, validation_InputExamples = convert_data_to_examples(train,test,'DATA_COLUMN','LABEL_COLUMN')
-
-        return self
     
-    def convert_examples_to_tf_dataset(self, examples=list(self.train_InputExamples), tokenizer, max_length=128):
+    def convert_examples_to_tf_dataset(self, examples=list(train_InputExamples), tokenizer, max_length=128):
         self.features = [] # -> will hold InputFeatures to be converted later
         for e in examples:
             # Documentation is really strong for this method, so please take a look at it
@@ -89,9 +86,7 @@ class preproc:
             input_ids, token_type_ids, attention_mask = (self.input_dict["input_ids"],
                 self.input_dict["token_type_ids"], self.input_dict['attention_mask'])
             self.features.append(
-                InputFeatures(
-                    input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids, label=e.label
-                )
+                InputFeatures(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids, label=e.label)
             )
         def gen():
             for f in self.features:
@@ -110,8 +105,7 @@ class preproc:
             {"input_ids": tf.TensorShape([None]),"attention_mask": tf.TensorShape([None]), 
             "token_type_ids": tf.TensorShape([None]),
             },
-            tf.TensorShape([]),), self,
-            )
+            tf.TensorShape([]),), self,)
 
 def train(args):
     #newBert_newMe
