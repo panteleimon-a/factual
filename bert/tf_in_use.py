@@ -1,17 +1,20 @@
 ##################### TF IDF (the LDA is ready, not added yet :@) ############################
 #import what you need
-import pandas as pd
-import numpy as np
-import nltk
-nltk.download('punkt')
-from nltk.corpus import stopwords
-import string
-import matplotlib.pyplot as plt
-import seaborn as sns
-# For now we have only the english text 
-en_stop=stopwords.words('english')
-from sklearn.feature_extraction.text import TfidfVectorizer
-remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
+try:
+  import pandas as pd
+  import numpy as np
+  import nltk
+  nltk.download('punkt')
+  from nltk.corpus import stopwords
+  import string
+  import matplotlib.pyplot as plt
+  import seaborn as sns
+  # For now we have only the english text 
+  en_stop=stopwords.words('english')
+  from sklearn.feature_extraction.text import TfidfVectorizer
+  remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
+except ImportError:
+  pass
 #the preprocess is currently with the nltk quick and agile. It is not custimizable but it is what we need right now
 def preprocess(text):
   return nltk.word_tokenize(text.lower().translate(remove_punctuation_map))

@@ -7,6 +7,7 @@ python train.py --lang en --model word2vec --size 300 --output data/en_wiki_word
 import argparse
 import tensorflow as tf
 import logging
+import torch
 import os
 import jieba
 import wiki as w
@@ -137,6 +138,9 @@ def get_args():
     return parser.parse_args()
 
 
+torch.save(model, 'factualBERT')
+
+saved_model = torch.load('factualBERT')
 
 def main():
     args = get_args()

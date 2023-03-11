@@ -51,3 +51,7 @@ cbow/en_wiki_word2vec_300.txt
 vector_model/skipgram/en_wiki_word2vec_300.txt
 .gitignore
 vector_model/cbow/en_wiki_word2vec_300.txt
+aclImdb/imdb.vocab
+aclImdb/test/labeledBow.feat
+aclImdb/train/unsupBow.feat
+aclImdb/train/labeledBow.feat
