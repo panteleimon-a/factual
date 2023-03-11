@@ -65,7 +65,6 @@ def convert_data_to_examples(train, test, DATA_COLUMN, LABEL_COLUMN):
   validation_InputExamples = test.apply(lambda x: InputExample(guid=None,text_a = x[DATA_COLUMN],text_b = None,label = x[LABEL_COLUMN]),axis = 1)
   return train_InputExamples, validation_InputExamples
 
-  train_InputExamples, validation_InputExamples = convert_data_to_examples(train,test,'DATA_COLUMN','LABEL_COLUMN')
   
 def convert_examples_to_tf_dataset(examples, tokenizer, max_length=128):
     features = [] # -> will hold InputFeatures to be converted later
