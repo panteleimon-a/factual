@@ -24,7 +24,8 @@
 *.lai
 *.la
 *.a
-*.lib
+*.li
+*.gz
 
 # Executables
 *.exe
@@ -40,6 +41,7 @@
 *.vec
 
 #Data
+*.txt
 *.csv
 parser/.DS_Store
 .gitignore
