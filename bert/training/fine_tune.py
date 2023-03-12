@@ -4,6 +4,9 @@ source ~/venv-metal/bin/activate
 python train.py --lang en --model word2vec --size 300 --output data/en_wiki_word2vec_300.txt
 !pip install transformers
 '''
+
+# this stage will be included in a json file or an automated task in GCS
+
 model_dir="/Users/pante/Git_Repositories/factual/bert/model"
 # online data source
 data_dir="https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
