@@ -13,12 +13,13 @@ try:
   en_stop=stopwords.words('english')
   from sklearn.feature_extraction.text import TfidfVectorizer
   remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
+  #the preprocess is currently with the nltk quick and agile. It is not custimizable but it is what we need right now
+  def preprocess(text):
+    return nltk.word_tokenize(text.lower().translate(remove_punctuation_map))
+  vectorizer = TfidfVectorizer(tokenizer=preprocess, stop_words=en_stop)
 except ImportError:
   pass
-#the preprocess is currently with the nltk quick and agile. It is not custimizable but it is what we need right now
-def preprocess(text):
-  return nltk.word_tokenize(text.lower().translate(remove_punctuation_map))
-vectorizer = TfidfVectorizer(tokenizer=preprocess, stop_words=en_stop)
+
 #the return has the cosine similarity in essense
 def compute_similarity(a, b):
   tfidf = vectorizer.fit_transform([a, b])

@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+*.feat
 
 # Precompiled Headers
 *.gch
@@ -58,3 +59,6 @@ aclImdb/imdb.vocab
 aclImdb/test/labeledBow.feat
 aclImdb/train/unsupBow.feat
 aclImdb/train/labeledBow.feat
+bert/training/aclImdb/imdb.vocab
+.gitignore
+bert/training/aclImdb/train/unsupBow.feat
