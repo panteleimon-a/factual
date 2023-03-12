@@ -138,9 +138,8 @@ def get_args():
     return parser.parse_args()
 
 
-torch.save(model, 'factualBERT')
 
-saved_model = torch.load('factualBERT')
+model1= tf.keras.models.load_model("/Users/pante/Git_Repositories/factual/bert/model")
 
 def main():
     args = get_args()

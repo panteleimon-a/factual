@@ -1,6 +1,4 @@
 #In the perfect universe we would have this code in a different .py but this is not the perfect universe. At least not yet
-
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
