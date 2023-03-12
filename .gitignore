@@ -36,9 +36,12 @@
 *.bin
 *.npy
 *.bz2
+*.index
+*.data*
 
 # Vectors
 *.vec
+*.pb
 
 #Data
 *.txt
@@ -49,7 +52,7 @@ parser/.DS_Store
 skipgram/en_wiki_word2vec_300.txt
 cbow/en_wiki_word2vec_300.txt
 vector_model/skipgram/en_wiki_word2vec_300.txt
-.gitignore
+.gitignore§
 vector_model/cbow/en_wiki_word2vec_300.txt
 aclImdb/imdb.vocab
 aclImdb/test/labeledBow.feat
