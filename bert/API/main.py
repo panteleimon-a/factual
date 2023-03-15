@@ -1,4 +1,7 @@
 #In the perfect universe we would have this code in a different .py but this is not the perfect universe. At least not yet
+# !python3 -m venv ~/venv-metal source ~/venv-metal/bin/activate
+# !pip install -r requirements.txt
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -7,6 +10,10 @@ import urllib.request
 from urllib.parse import urlparse
 from tf_in_use import compute_similarity
 from request import fetch, get_useragent
+import tensorflow as tf
+import pandas as pd
+from transformers import BertTokenizer, TFBertForSequenceClassification
+from transformers import InputExample, InputFeatures
 
 # Input query (GET request) / request in json format here
 import re
