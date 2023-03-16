@@ -35,7 +35,7 @@ class fetch:
           # except:
             # continue
             self._encoding = BeautifulSoup(req.text,'html.parser')
-            self._pic_encoding = BeautifulSoup(req.text,'html.parser',from_encoding=response.info().get_param('charset'))
+#             self._pic_encoding = BeautifulSoup(req.text,'html.parser',from_encoding=response.info().get_param('charset'))
     # Get the text from the page#
     def text(self):
         webtext = ''
@@ -71,4 +71,21 @@ class fetch:
         url_list = list(map(list, zip(*[url_name, url_link])))
         url_df = pd.DataFrame(url_list)
         return url_df
+    #Get the date of the article (if it exists)
+    def date(self):
+        meta = self._encoding.find_all('meta')
+        published_date = []
+        modified_date = []
+        #meta should be global function
+        '''
+        Many pages use meta tags for dates, authors and keywords. Assuming that the property of the date meta tag, will contain
+        the word 'published' and 'modified' we use it as a leverage to fetch the date.
+        '''
+        for tag in meta:
+            if 'property' in tag.attrs.keys():
+                if tag.attrs['property'].strip().lower().find('published') > 0:
+                    published_date.append(tag.attrs['content'])
+                elif tag.attrs['property'].strip().lower().find('modified') > 0:
+                    modified_date.append(tag.attrs['content'])
+        return published_date, modified_date
   
