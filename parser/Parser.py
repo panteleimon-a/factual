@@ -1,4 +1,3 @@
-
 import requests
 
 URL1 = "https://edition.cnn.com/2022/12/09/europe/russia-putin-nuclear-weapons-intl/index.html"
