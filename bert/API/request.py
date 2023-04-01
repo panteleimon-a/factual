@@ -24,13 +24,14 @@ class fetch:
     def __init__(self, url):
         # for proxy in proxies:
           # try:
+#             cookie exorcist:
             cookies = {'privacy-policy': '1,XXXXXXXXXXXXXXXXXXXXXX'}
             req = requests.get(
             url=url,
             headers={"User-Agent": get_useragent()},
             # ,proxies={'http': proxy, 'https': proxy}
             cookies=cookies)
-#             soup = BeautifulSoup(response,'html.parser',from_encoding=req)
+#  soup = BeautifulSoup(response,'html.parser',from_encoding=req)
             # break
           # If the request failed, continue to the next proxy
           # except:
