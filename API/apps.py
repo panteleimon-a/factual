@@ -20,4 +20,4 @@ class ApiConfig(AppConfig):
     dir= [i for i in str(BASE_DIR).split('/') if i!=""]
     '''
     tokenizer= BertTokenizer.from_pretrained("bert-base-uncased")
-    model=tf.keras.models.load_model("models")
+    model=tf.keras.models.load_model("API/models")
