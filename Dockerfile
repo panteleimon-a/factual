@@ -11,4 +11,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libc-dev libpq-dev python-dev
 COPY . .
 CMD HOME=/root python3 manage.py runserver localhost:8000
- 

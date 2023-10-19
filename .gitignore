@@ -45,12 +45,12 @@
 *.pb
 
 #Data
-*.txt
 *.csv
 parser/.DS_Store
 .gitignore
 .DS_Store
 skipgram/en_wiki_word2vec_300.txt
+
 cbow/en_wiki_word2vec_300.txt
 vector_model/skipgram/en_wiki_word2vec_300.txt
 .gitignore§
@@ -62,3 +62,4 @@ aclImdb/train/labeledBow.feat
 bert/training/aclImdb/imdb.vocab
 .gitignore
 bert/training/aclImdb/train/unsupBow.feat
+API/tokenizer/vocab.txt
