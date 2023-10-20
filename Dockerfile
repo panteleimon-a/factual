@@ -5,12 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN mkdir /code
 COPY . /code/
 WORKDIR /code
-
-RUN curl https://sdk.cloud.google.com | bash
-RUN bash install.sh --disable-prompts
 #HERE!
 RUN pip install --upgrade pip
-# added gsutil in requirements
+# added gsutil/google-auth==2.23.3 in requirements
 RUN pip install -r requirements.txt
 RUN gcloud auth activate-service-account --key-file=key.json
 RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models

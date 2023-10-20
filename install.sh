@@ -1,2 +1,0 @@
-- `--disable-prompts` - disable prompts.
-- `--install-dir=`
