@@ -2,3 +2,5 @@
   # running docker-compose
   - name: 'docker/compose:2.23.0'
     args: ['up', '-d']
+  options:
+    logging: CLOUD_LOGGING_ONLY
