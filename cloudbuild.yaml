@@ -3,8 +3,13 @@
     # Build the new docker image.
       - name: 'gcr.io/cloud-builders/docker'
         args: ['build', '-t', 'gcr.io/platform-api-389019/factual_app-web', 'Dockerfile-GCP']
+        logsBucket: 'gs://cloudbuild-logs-factual'
+        options:
+          logging: GCS_ONLY
+
       - name: 'gcr.io/cloud-builders/docker'
         args: ['push', 'gcr.io/platform-api-389019/factual_app-web']
+
       - name: 'gcr.io/cloud-builders/gcloud'
         args: ['run', 'deploy', 'factual-app',
            '--platform', 'managed', '--region', 'europe-west4',
