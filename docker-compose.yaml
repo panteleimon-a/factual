@@ -2,7 +2,8 @@ version: "3"
 
 services:
   web:
-    build: .
+    build:
+      dockerfile: code/Dockerfile-GCP
     command:
     volumes:
       - .:/code
