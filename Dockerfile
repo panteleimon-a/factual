@@ -6,15 +6,13 @@ RUN mkdir /code
 COPY . /code/
 WORKDIR /code
 
-RUN docker pull gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
-RUN docker run --rm gcr.io/google.com/cloudsdktool/google-cloud-cli:latest gcloud version
-
+RUN curl https://sdk.cloud.google.com | bash
+RUN bash install.sh --disable-prompts
 #HERE!
-RUN docker run -ti --name gcloud-config gcr.io/google.com/cloudsdktool/google-cloud-cli gcloud auth activate-service-account --key-file=key.json
-#RUN gcloud auth activate-service-account --key-file=key.json
-
 RUN pip install --upgrade pip
+# added gsutil in requirements
 RUN pip install -r requirements.txt
+RUN gcloud auth activate-service-account --key-file=key.json
 RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libc-dev libpq-dev python-dev
