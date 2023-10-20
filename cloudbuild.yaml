@@ -4,4 +4,3 @@
     args: ['up', '-d']
   options:
     logging: CLOUD_LOGGING_ONLY
-    BRANCH_NAME: "factual_app"
