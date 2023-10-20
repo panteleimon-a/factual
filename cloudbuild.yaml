@@ -1,6 +1,8 @@
   steps:
   # running docker-compose
-  - name: 'docker/compose:2.23.0'
-    args: ['up', '-d']
+# Build the new docker image.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/platform-api-389019/factual_app-web:latest', '.']
   options:
     logging: CLOUD_LOGGING_ONLY
+  images: ['gcr.io/platform-api-389019/factual_app-web:latest']

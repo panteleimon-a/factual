@@ -6,7 +6,7 @@ RUN mkdir /code
 COPY . /code/
 WORKDIR /code
 RUN gcloud auth activate-service-account --key-file=key.json
-RUN gsuitl cp gs://platform-api-389019-tf2-models/models /API/models
+RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends \
