@@ -4,6 +4,7 @@ services:
   web:
     build:
       dockerfile: code/Dockerfile-GCP
+      options: CLOUD_LOGGING_ONLY 
     command:
     volumes:
       - .:/code
