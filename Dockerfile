@@ -5,10 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN mkdir /code
 COPY . /code/
 WORKDIR /code
-#HERE!
+
+# instlal dependencies
 RUN pip install --upgrade pip
-# added gsutil/google-auth==2.23.3 in requirements
 RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libc-dev libpq-dev python-dev curl
 
 # Downloading gcloud package
 RUN curl https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz > /tmp/google-cloud-sdk.tar.gz
@@ -20,10 +22,12 @@ RUN mkdir -p /usr/local/gcloud \
 
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 
+# authenticate gcloud
 RUN gcloud auth activate-service-account --key-file=key.json
+
+# add models folder from storage bucket 
 RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libc-dev libpq-dev python-dev
+
 COPY . .
 EXPOSE 8000
 CMD HOME=/root python3 manage.py runserver localhost:8000
