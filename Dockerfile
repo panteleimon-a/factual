@@ -9,6 +9,17 @@ WORKDIR /code
 RUN pip install --upgrade pip
 # added gsutil/google-auth==2.23.3 in requirements
 RUN pip install -r requirements.txt
+
+# Downloading gcloud package
+RUN curl https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz > /tmp/google-cloud-sdk.tar.gz
+
+# Installing the package
+RUN mkdir -p /usr/local/gcloud \
+  && tar -C /usr/local/gcloud -xvf /tmp/google-cloud-sdk.tar.gz \
+  && /usr/local/gcloud/google-cloud-sdk/install.sh
+
+ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
+
 RUN gcloud auth activate-service-account --key-file=key.json
 RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models
 RUN apt-get update && apt-get install -y --no-install-recommends \
