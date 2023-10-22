@@ -4,8 +4,6 @@
 # ignore all markdown files (md) beside all README*.md other than README-secret.md
 *.md
 !README*.md
-# ignore key.json
-key.json
 # ignore skaffold.yaml 
 skaffold.yaml
 # ignore license

@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN mkdir /code
 COPY . /code/
 WORKDIR /code
-COPY key.json .
+
 # install dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
@@ -23,7 +23,7 @@ RUN mkdir -p /usr/local/gcloud \
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 
 # authenticate gcloud
-RUN gcloud auth activate-service-account --key-file=/root/key.json
+RUN gcloud auth activate-service-account --key-file=key.json
 
 # add models folder from storage bucket 
 RUN gsutil cp gs://platform-api-389019-tf2-models/models /API/models
