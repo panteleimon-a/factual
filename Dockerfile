@@ -3,10 +3,9 @@ FROM python:3.10-slim-bullseye
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONBUFFERED=1
 RUN mkdir /code
-COPY key.json /code/
 COPY . /code/
 WORKDIR /code
-
+COPY key.json .
 # install dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
