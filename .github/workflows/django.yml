@@ -22,12 +22,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: gsutil authentication
+    - uses: google-github-actions/setup-gcloud@master
+      with:
+        keyFilename: 'platform-api-389019-c18492c31c22.json'
+    - name: add models folder
       run: |
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          keyFilename: 'key.json'
         gsutil cp gs://platform-api-389019-tf2-models/models /API/models
-    - name: add models folder from cloud storage
+    - name: install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
