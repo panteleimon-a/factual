@@ -23,13 +23,13 @@ RUN mkdir -p /usr/local/gcloud \
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 
 # authenticate gcloud
-RUN HOME=/root gcloud auth activate-service-account --key-file=platform-api-389019-c18492c31c22.json
-
-# add models folder from storage bucket 
-RUN gsutil -m cp -r \
+RUN HOME=/root gcloud auth activate-service-account '${{ credentials.json.client_email }}' --key-file=platform-api-389019-c18492c31c22.json && gsutil -m cp -r \
   "gs://platform-api-389019-tf2-models/models" \
   "gs://platform-api-389019-tf2-models/tokenizer" \
   /API/models
+
+# add models folder from storage bucket 
+
 
 COPY . .
 EXPOSE 8000
