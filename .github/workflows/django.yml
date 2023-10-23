@@ -31,8 +31,7 @@ jobs:
         workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
         service_account: '${{ secrets.SA_EMAIL }}'
     - name: add models folder
-      run: |
-        gcloud init
+      run: |-
         gsutil cp gs://platform-api-389019-tf2-models/models /API/models
     - name: install dependencies
       run: |
