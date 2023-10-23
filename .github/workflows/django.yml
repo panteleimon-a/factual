@@ -34,7 +34,7 @@ jobs:
       run: |-
         sudo mkdir -p /models
         gsutil -o Credentials:gs_service_key_file=platform-api-389019-c18492c31c22.json cp -r gs://platform-api-389019-tf2-models/models /models
-      working-directory: ./home/factual/API
+      working-directory: ./API
     - name: install dependencies
       run: |
         python -m pip install --upgrade pip
