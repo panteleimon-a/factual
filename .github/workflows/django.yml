@@ -33,7 +33,7 @@ jobs:
     - name: add models folder
       run: |-
         sudo mkdir -p /models
-        gsutil -o Credentials:gs_service_key_file=credentials.json cp -r gs://platform-api-389019-tf2-models/models /models
+        gsutil cp -r gs://platform-api-389019-tf2-models/models /models
       working-directory: ./API
     - name: install dependencies
       run: |
