@@ -23,7 +23,7 @@ RUN mkdir -p /usr/local/gcloud \
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 
 # authenticate gcloud
-RUN HOME=/root gcloud auth activate-service-account --key-file=platform-api-389019-c18492c31c22.json && RUN gcloud config set project '${{ credentials.json.project_id }}'  && gsutil -m cp -r \
+RUN HOME=/root gcloud auth activate-service-account --key-file=platform-api-389019-c18492c31c22.json && gcloud config set project '${{ credentials.json.project_id }}'  && gsutil -m cp -r \
   "gs://platform-api-389019-tf2-models/models" \
   /API/models
 
