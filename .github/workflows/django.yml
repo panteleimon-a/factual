@@ -32,7 +32,7 @@ jobs:
         service_account: '${{ secrets.SA_EMAIL }}'
     - name: add models folder
       run: |-
-        mkdir -p /API/models
+        sudo mkdir /API/models
         gsutil -o Credentials:gs_service_key_file=platform-api-389019-c18492c31c22.json cp -r gs://platform-api-389019-tf2-models/models /API/models
     - name: install dependencies
       run: |
