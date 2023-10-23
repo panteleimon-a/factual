@@ -33,7 +33,7 @@ jobs:
     - name: add models folder
       run: |-
         sudo mkdir -p /models
-        gcloud alpha storage cp -r gs://platform-api-389019-tf2-models/models /models
+        gcloud alpha storage cp -r gs://platform-api-389019-tf2-models/models .
         working-directory: ./API
     - name: install dependencies
       run: |
