@@ -32,8 +32,9 @@ jobs:
         service_account: '${{ secrets.SA_EMAIL }}'
     - name: add models folder
       run: |-
-        sudo mkdir -p /API/models
+        sudo mkdir -p /models
         gsutil -o Credentials:gs_service_key_file=platform-api-389019-c18492c31c22.json cp -r gs://platform-api-389019-tf2-models/models /API/models
+        working-directory: factual/API
     - name: install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -41,3 +42,4 @@ jobs:
     - name: Run Tests
       run: |
         python manage.py test
+      working-directory: factual
