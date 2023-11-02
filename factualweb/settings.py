@@ -83,8 +83,11 @@ WSGI_APPLICATION = 'factualweb.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'HOST': '35.239.141.84',
+        'USER': 'pangelidis@factual.gr',
+        'PASSWORD': 'je2v!he6',
+        'NAME': 'db-factual-lite',
     }
 }
 
