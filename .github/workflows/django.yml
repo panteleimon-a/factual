@@ -30,6 +30,10 @@ jobs:
       with:
         workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
         service_account: '${{ secrets.SA_EMAIL }}'
+    - uses: 'mattes/gce-cloudsql-proxy-action@v1'
+      with:
+        creds: '${{ secrets.GOOGLE_CREDENTIALS }}'
+        instance: 'platform-api-389019:us-central1:factual-django-db'
     - name: add models folder
       run: |-
         sudo mkdir -p /models
