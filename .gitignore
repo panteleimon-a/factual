@@ -63,3 +63,4 @@ bert/training/aclImdb/imdb.vocab
 .gitignore
 bert/training/aclImdb/train/unsupBow.feat
 API/tokenizer/vocab.txt
+.vercel
