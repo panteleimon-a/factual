@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-rsv45$z%4&-i=gx6=q#v0eg351p2*_v@^o^6#$vohwmhy74m1e
 # Set to False when deployed
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app']
 
 
 # Application definition
@@ -81,15 +81,21 @@ WSGI_APPLICATION = 'factualweb.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'HOST': '35.239.141.84',
-        'USER': 'pangelidis@factual.gr',
-        'PASSWORD': 'je2v!he6',
-        'NAME': 'db-factual-lite',
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+#}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'HOST': '35.239.141.84',
+#        'USER': 'pangelidis@factual.gr',
+#        'PASSWORD': '*******',
+#        'NAME': 'db-factual-lite',
+#    }
+#}
 
 
 # Password validation
