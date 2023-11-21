@@ -64,3 +64,5 @@ bert/training/aclImdb/imdb.vocab
 bert/training/aclImdb/train/unsupBow.feat
 API/tokenizer/vocab.txt
 .vercel
+.env
+node_modules
