@@ -13,24 +13,35 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read our pre-trained models
-MODELS = os.path.join(BASE_DIR,'models')
-TOKENIZER = os.path.join(BASE_DIR,'tokenizer')
+# Read our pre-trained models - not in use
+# MODELS = os.path.join(BASE_DIR,'models')
+# TOKENIZER = os.path.join(BASE_DIR,'tokenizer')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rsv45$z%4&-i=gx6=q#v0eg351p2*_v@^o^6#$vohwmhy74m1e'
+# Load from SECRET_KEY GitHub env
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production! 
 # Set to False when deployed
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app']
+# Allow only HTTPS traffic
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Redirect SSL. Set to False, if load balancer redirects connection to HTTPS
+PREPEND_WWW = True
+BASE_URL = "https://www.factual.gr"
+ALLOWED_HOSTS = ['127.0.0.1', 'http://localhost:3000/', 'www.factual.gr', 'factual.gr']
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 
 # Application definition
