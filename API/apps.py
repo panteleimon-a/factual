@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 from factualweb import settings
-from factualweb.settings import BASE_DIR, TOKENIZER, MODELS
 import os
 import tensorflow as tf
 try:
