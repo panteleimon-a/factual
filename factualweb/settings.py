@@ -107,16 +107,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#        'HOST': '35.239.141.84',
-#        'USER': 'pangelidis@factual.gr',
-#        'PASSWORD': '*******',
-#        'NAME': 'db-factual-lite',
-#    }
-#}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
