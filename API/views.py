@@ -19,7 +19,6 @@ class twitter_API(APIView):
         text = link.split('=')[0]
         return f'<a target="_blank" href="{link}">{text}</a>'
     def post(self, request):
-        context={}
         data=request.data
         query = data["text/URL"]
         textAns = comparison_list(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer)
