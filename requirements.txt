@@ -84,3 +84,6 @@ webencodings==0.5.1
 Werkzeug==2.2.3
 whitenoise==6.6.0
 rsa==4.7.2
+browser-cookie3==0.19.1
+lz4==4.3.2
+pycryptodomex==3.19.1

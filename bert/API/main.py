@@ -4,18 +4,13 @@
 # !pip install -r requirements.txt
 from tqdm import tqdm
 import re
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
-import random
-import urllib.request
 from urllib.parse import urlparse
 from bert.API.tf_in_use import * 
-from bert.parser.Parser import fetch, get_useragent
+from bert.parser.Parser import fetch
 import tensorflow as tf
 from pickle import FALSE
 import pandas as pd
-from transformers import BertTokenizer
 
 
 def links(query):
