@@ -17,20 +17,12 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read our pre-trained models - not in use
-# MODELS = os.path.join(BASE_DIR,'models')
-# TOKENIZER = os.path.join(BASE_DIR,'tokenizer')
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Load from SECRET_KEY GitHub env
 SECRET_KEY = os.getenv("SECRET_KEY")
-
-
-
-
 
 # Redirect SSL. Set to False, if load balancer redirects connection to HTTPS
 PREPEND_WWW = False
@@ -39,9 +31,10 @@ ALLOWED_HOSTS = ['127.0.0.1', 'http://localhost:3000/', 'www.factual.gr', 'factu
 
 # SECURITY WARNING: Settings for development are enabled when 'DJANGO_ENV' is not set. In Actions (GitHub), 
 # the secret key is set from secrets in the .yml Actions file.
+DJANGO_ENV = None
+os.environ.get('DJANGO_ENV')
 
-
-if os.environ.get('DJANGO_ENV') is None:
+if DJANGO_ENV is None:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
@@ -54,7 +47,6 @@ else:
     DEBUG = False
 
 # Chrome and Mozilla require this
-    
 SESSION_COOKIE_SAMESITE = None
 CSRF_COOKIE_SAMESITE = None
 
@@ -164,3 +156,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, "/static")
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ISALLOWED_TOKENS = []
+
+# open file and read the content in a list
+with open(r'bert/parser/robots.txt', 'r') as fp:
+    for line in fp:
+        # remove linebreak from a current name
+        # linebreak is the last character of each line
+        x = line[:-1]
+
+        # add current item to the list
+        ISALLOWED_TOKENS.append(x)

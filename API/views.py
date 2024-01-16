@@ -1,5 +1,4 @@
-from bert.API.main import comparison_list
-import json
+from bert.API.tf_in_use import * 
 import pandas as pd
 from API.apps import ApiConfig
 from rest_framework.views import APIView
@@ -18,16 +17,11 @@ class twitter_API(APIView):
         # extract clickable text to display for your link
         text = link.split('=')[0]
         return f'<a target="_blank" href="{link}">{text}</a>'
+    
     def post(self, request):
         data=request.data
-        query = data["text/URL"]
-        textAns = comparison_list(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer)
-        # json_records = textAns.reset_index().to_json()
-        # jsonify
-        # arr=[]
-        # arr= json.loads(json_records)
-        # context["text"]= textAns.reset_index() #textAns.to_html()
-        # jsonify
+        query = etl(data["text/URL"]).preprocess()
+        textAns = prod(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer).comparison_list()
         df=pd.DataFrame({'sources':[i for i in textAns["URL"]], 'factual index': [i for i in textAns["Probability"]]})
 
         # link is the column with hyperlinks
