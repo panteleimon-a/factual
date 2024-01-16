@@ -1,4 +1,6 @@
+selenium==4.16.0 
 gsutil==5.26
+webdriver-manager==4.0.1
 psycopg2-binary==2.9.9
 google-auth==2.23.3
 tensorflow==2.13.0rc0
