@@ -1,33 +1,17 @@
 ##################### TF IDF (the LDA is ready, not added yet :@) ############################
 #import what you need
-try:
-  #In the perfect universe we would have this code in a different .py but this is not the perfect universe. At least not yet
+#In the perfect universe we would have this code in a different .py but this is not the perfect universe. At least not yet
 # !python3 -m venv ~/venv-metal                                             
 # !source ~/venv-metal/bin/activate
 # !pip install -r requirements.txt
-  import tensorflow as tf
-  from pickle import FALSE
-  import pandas as pd
-  from bert.parser.Parser import *
-  import nltk
-  nltk.download('punkt')
-  from nltk.corpus import stopwords
-  from bert.parser.Parser import *
-  import string
-  from sklearn.feature_extraction.text import TfidfVectorizer
-except ImportError:
-  pass
-
-class etl:
-  def __init__(self, text):
-    # For now we have only the english text 
-    self.en_stop=stopwords.words('english')
-    self.text=text
-  def preprocess(self):
-    remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
-    new_text= nltk.word_tokenize(self.text.lower().translate(remove_punctuation_map))
-    query= [word for word in new_text if word not in self.en_stop]
-    return query
+import tensorflow as tf
+from pickle import FALSE
+import pandas as pd
+from bert.parser.Parser import Parse
+import nltk
+nltk.download('punkt')
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Our precious sentiment analysis
 def get_sent(senttext, model, tokenizer):
@@ -37,36 +21,39 @@ def get_sent(senttext, model, tokenizer):
   return tf_predictions.numpy()[1]
 
 class prod:
-  def __init__(self, query, model, tokenizer):
+  def __init__(self, query, model, tokenizer, etl):
     self.en_stop=stopwords.words('english')
+    self.etl=etl
     self.Parse=Parse
     self.query=query
     self.model=model
     self.tokenizer=tokenizer
-  def compute_similarity(self, a, b):
+  def compute_similarity(self, b):
     # Cosine similarity
-    # The preprocess is currently with the nltk quick and agile. It is not custimizable but it is what we need right now
-    vectorizer = TfidfVectorizer(tokenizer=lambda i:i, stop_words=self.en_stop) #tokenizer=self.preprocess
-    tfidf = vectorizer.fit_transform([a, b])
+    # We preprocess both a and b, so no need for a preprocess step in the tokenizer, like etl.proprocess
+    vectorizer = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False) #tokenizer=self.preprocess
+    b=self.etl(b).preprocess()
+    tfidf = vectorizer.fit_transform([self.query, b])
     return ((tfidf * tfidf.T).toarray())[0,1]
   
   #This will return a list (not yet but close) of the sources and the score or similarity (words and sentiment)
   def comparison_list(self):
-    articles=self.Parse(self.query).text()
-    urls=self.Parse(self.query).urls()
+    init=self.Parse(self.query, self.etl)
+    links=init.links
+    articles=init.text()
     querysent=get_sent(self.query,self.model,self.tokenizer)
     simlist=[]
     sentlist=[]
     valid_urls=[]
-    sim=[]
     j=0
     for i in articles:
-      sim.append(self.compute_similarity(self.query,articles[i]*1.25))
+      # Was articles[i]*1.25
+      sim=self.compute_similarity(self.query,articles[i])
       if sim!=0:
+        sentsimilarity=1-abs(get_sent(i,self.model,self.tokenizer)-querysent)
         simlist.append(sim)
-        sent=1-abs(get_sent(i,self.model,self.tokenizer)-querysent)
-        sentlist.append(sent)
-        valid_urls.append(urls[j])
+        sentlist.append(sentsimilarity)
+        valid_urls.append(links[j])
       res_list={'URL':valid_urls, 'Probability':[sim[l]*sentlist[l] for l in range(len(sim))]}
       j+=1
     return pd.DataFrame(res_list)

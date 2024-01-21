@@ -168,3 +168,5 @@ with open(r'bert/parser/robots.txt', 'r') as fp:
 
         # add current item to the list
         ISALLOWED_TOKENS.append(x)
+
+ETL=STATIC_ROOT = os.path.join(BASE_DIR, "bert/API/tf_in_use.py")
