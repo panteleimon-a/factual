@@ -1,9 +1,9 @@
-from bert.API.tf_in_use import * 
+from bert.API.etl import etl
+from bert.API.tf_in_use import prod
 import pandas as pd
 from API.apps import ApiConfig
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
 # Create your views here.
 
 class match:
@@ -21,7 +21,7 @@ class twitter_API(APIView):
     def post(self, request):
         data=request.data
         query = etl(data["text/URL"]).preprocess()
-        textAns = prod(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer).comparison_list()
+        textAns = prod(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer, etl=etl).comparison_list()
         df=pd.DataFrame({'sources':[i for i in textAns["URL"]], 'factual index': [i for i in textAns["Probability"]]})
 
         # link is the column with hyperlinks
