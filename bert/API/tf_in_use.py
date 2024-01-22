@@ -32,23 +32,21 @@ class prod:
     # Cosine similarity
     # We preprocess both a and b, so no need for a preprocess step in the tokenizer, like etl.proprocess
     vectorizer = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False) #tokenizer=self.preprocess
-    b=self.etl(b).preprocess()
     tfidf = vectorizer.fit_transform([self.query, b])
     return ((tfidf * tfidf.T).toarray())[0,1]
   
   #This will return a list (not yet but close) of the sources and the score or similarity (words and sentiment)
   def comparison_list(self):
     init=self.Parse(self.query, self.etl)
-    links=init.links
-    articles=init.text()
+    articles,links=init.text()
     querysent=get_sent(self.query,self.model,self.tokenizer)
     simlist=[]
     sentlist=[]
     valid_urls=[]
     j=0
-    for i in articles:
+    for i in range(len(articles)):
       # Was articles[i]*1.25
-      sim=self.compute_similarity(self.query,articles[i])
+      sim=self.compute_similarity(articles[i])
       if sim!=0:
         sentsimilarity=1-abs(get_sent(i,self.model,self.tokenizer)-querysent)
         simlist.append(sim)
