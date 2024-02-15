@@ -32,7 +32,7 @@ def ChromeSocket(url):
     _encoding = BeautifulSoup(r.text, "html5lib")
     options = Options()
     options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options)
     return _encoding, driver
 
 # Generates a list of lists (pages of urls)
