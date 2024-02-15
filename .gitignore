@@ -66,3 +66,4 @@ API/tokenizer/vocab.txt
 .vercel
 .env
 node_modules
+node-setup.txt
