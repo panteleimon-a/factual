@@ -3,7 +3,6 @@ try:
     import random
     import io
     import json
-    from pathlib import Path
     from factualweb.settings import BASE_DIR
 except ImportError:
     pass

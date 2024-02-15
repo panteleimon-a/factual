@@ -1,12 +1,10 @@
 from django.apps import AppConfig
-from factualweb import settings
-import os
+
 import tensorflow as tf
 try:
     from transformers import BertTokenizer
 except ImportError:
     raise ImportError
-from pathlib import Path
 
 class ApiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

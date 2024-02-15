@@ -3,11 +3,7 @@
 class for word vectorization
 """
 import pandas as pd
-from _io import BytesIO
-from _io import *
 from zipfile import *
-from urllib.request import urlopen
-import _io as io
 
 class load_vectors:
     def __init__(self,fname):
