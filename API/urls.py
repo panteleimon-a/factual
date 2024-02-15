@@ -1,7 +1,7 @@
 from django.urls import path
-from API.views import twitter_API
+from API.views import SearchView
 
 
 urlpatterns = [
-    path('', twitter_API.as_view(), name="platform_API"),
+    path('', SearchView.as_view(), name="factual API"),
 ]

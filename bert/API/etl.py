@@ -3,6 +3,7 @@ import nltk
 nltk.download('punkt')
 from nltk.corpus import stopwords
 import string
+import re
 # Super important, think of adding stemming
 # https://medium.com/@mifthulyn07/comparing-text-documents-using-tf-idf-and-cosine-similarity-in-python-311863c74b2c
 
