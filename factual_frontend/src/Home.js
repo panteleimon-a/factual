@@ -11,23 +11,18 @@ const Home = () => {
             <ParticlesBackground/>
             <Row>
               <h2 id="main-phrase">
-                Easy fact checking on the go!
+                Approach the info you need.
               </h2>
               <Col className='mt-5'>
                 <SearchBar />               
               </Col>
             </Row>
-            <Row id="slogans-row">
-              <Col>
-                <h4 id="slogans-id">New era on fact checking</h4>
-              </Col>
-              <Col>
-                <h4 id="slogans-id">The go to tool for journalism</h4>
-              </Col>
-              <Col>
-                  <h4 id="slogans-id">Work smarter not harder</h4>
-              </Col>
-            </Row>
+            <Row>
+            <footer id="footer-phrase">
+  <p>factual by Bonefide
+  </p>
+</footer>
+              </Row>
           </Container>
     );
 }

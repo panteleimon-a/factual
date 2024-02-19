@@ -14,6 +14,8 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 # Library to sort similarity
 from operator import itemgetter
+# Import cosine similarity library
+from sklearn.metrics.pairwise import linear_kernel
 
 # Our precious sentiment analysis
 def get_sent(senttext, model, tokenizer):
@@ -36,7 +38,8 @@ class prod:
     vectorizer = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False) #tokenizer=self.preprocess
     comp_lst=[self.query, b[0]]
     tfidf = vectorizer.fit_transform(comp_lst)
-    return ((tfidf * tfidf.T).toarray())[0,1]
+    cosine_similarities = linear_kernel(tfidf[0:1], tfidf).flatten()
+    return cosine_similarities[1]
   #This will return a list (not yet but close) of the sources and the score or similarity (words and sentiment)
   def comparison_list(self):
     init=self.Parse(self.query, self.etl)

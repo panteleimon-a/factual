@@ -22,13 +22,13 @@ const SearchResults = ( ) => {
                     <Col key={index} sm={12} md={4} className="d-flex justify-content-center">
                         <Card>
                             <Card.Title>
-                                <div className="custum-label">factual rating</div>
+                                <div className="custum-label">Match</div>
                                 <Container fluid id="card-title-container" className="d-flex justify-content-center">
-                                    {result && result["factual index"] !== undefined ? (
+                                    {result && result["Match"] !== undefined ? (
                                         <div className="outer">
-                                        <div className="dot" style={{ "--value": `calc(${result["factual index"]} )` }}></div>
+                                        <div className="dot" style={{ "--value": `calc(${result["Match"]} )` }}></div>
                                         <div className="inner">
-                                          <p id="progresbar-rating">{result["factual index"]}</p>
+                                          <p id="progresbar-rating">{result["Match"]}</p>
                                         </div>
                                       </div>
                                     ) : (
