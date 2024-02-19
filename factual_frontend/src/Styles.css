@@ -49,6 +49,12 @@ h2, h4{
     margin-top: 25%;
 }
 
+#footer-phrase{
+    margin-bottom: 10%;
+    color: whitesmoke;
+    align-items: center;
+}
+
 #slogans-id{
     margin-top: 45%;
     color: var(--text-color);

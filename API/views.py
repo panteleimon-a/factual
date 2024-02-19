@@ -1,6 +1,5 @@
 from bert.API.etl import etl
 from bert.API.tf_in_use import prod
-import pandas as pd
 from API.apps import ApiConfig
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +22,7 @@ class SearchView(APIView):
         df = prod(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer, etl=etl).comparison_list()
         # link is the column with hyperlinks
         df.style.format({'URL': self.make_clickable})
+        df['Match'] = df['Match'].map('{:.2%}'.format)
         df_dict=df.to_dict('records')
         return Response(df_dict, status=200)
 

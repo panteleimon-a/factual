@@ -58,7 +58,7 @@ const SearchBar = () => {
             id="search-form-control"
             size="lg"
             type="text"
-            placeholder="Input URL or fact to check"
+            placeholder="Input URL or claim to analyze"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} 
             onInput={handleKeyPress}
