@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {Form, InputGroup, Button, Spinner } from  'react-bootstrap'
+import {Form, InputGroup, Button, Spinner, Container, Row, Col } from  'react-bootstrap'
 import { Search } from 'react-bootstrap-icons';
 
 const SearchBar = () => {
@@ -14,13 +14,7 @@ const SearchBar = () => {
       '$1'
     );
 
-    const handleKeyPress = (e) => {
-      // Triggered by pressing the enter key
-      if (e.key === 13) {
-        
-        handleSearch();
-      }
-    };
+  
 
     const handleSearch = async (e) => {
       e.preventDefault();
@@ -50,7 +44,39 @@ const SearchBar = () => {
         setLoading(false);
       }
     };
-
+  if(loading){
+    return(
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 1)',
+        color: 'white',
+        zIndex: 1050,
+      }}>
+        <Container fluid id="loader-container">
+          <Row>
+            <Col className="d-flex justify-content-end">
+              <h1 className='loadingHeading'>FACTUAL</h1>
+            </Col>
+            <Col id="loader-sceond-col">
+              <div className ="loader"></div>
+            </Col>
+          </Row>
+          <Row id="loader-sceond-row">
+            <Col>
+              <p className='loadingParagraph'>It may take a while.Don't worry, we have a lot to analyze</p>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    );
+  }
   return (
     <Form onSubmit={handleSearch} id="search-form">
       <InputGroup className="mb-2" id="search-form">
@@ -58,10 +84,10 @@ const SearchBar = () => {
             id="search-form-control"
             size="lg"
             type="text"
-            placeholder="Input URL or claim to analyze"
+            placeholder="Input URL or fact to check"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)} 
-            onInput={handleKeyPress}
+ 
           />
           <Button
             id="search-button"

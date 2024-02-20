@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-
+from datetime import timedelta #giorgos_ster
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Load from SECRET_KEY GitHub env
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = 'django-insecure-rsv45$z%4&-i=gx6=q#v0eg351p2*_v@^o^6#$vohwmhy74m1e'
 
 # Redirect SSL. Set to False, if load balancer redirects connection to HTTPS
 PREPEND_WWW = False
@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     'API',
     'rest_framework',
     'corsheaders', #giorgos_ster
+    'accounts', #giorgos_ster
+    'rest_framework_simplejwt.token_blacklist', #giorgos_ster
 ]
 
 MIDDLEWARE = [
@@ -79,9 +81,32 @@ MIDDLEWARE = [
 ]
 
 ####giorgos_ster####
+REST_FRAMEWORK = {
+     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+      ],
+}
+SIMPLE_JWT = {
+     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+     'ROTATE_REFRESH_TOKENS': True,
+     'BLACKLIST_AFTER_ROTATION': True
+}
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  
 ]
+
+
+#AUTH_USER_MODEL = 'accounts.UserProfile'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    #'accounts.backends.EmailBackend'
+]
+
+'''
+CORS_ALLOW_CREDENTIALS = True
+'''
 #####
 
 ROOT_URLCONF = 'factualweb.urls'

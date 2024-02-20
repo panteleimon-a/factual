@@ -5,7 +5,14 @@ import SearchBar from "./SearchBar";
 const SearchResults = ( ) => {
   const location = useLocation();
   const searchResults = location.state ? location.state.searchResults : null;
+
+  const sortedSearchResults = searchResults ? [...searchResults].sort((a, b) => {
+    const matchA = typeof a["Match"] === 'string' ? parseFloat(a["Match"]) : a["Match"];
+    const matchB = typeof b["Match"] === 'string' ? parseFloat(b["Match"]) : b["Match"];
   
+    return matchB - matchA;
+  }) : null;
+
   return (
     <div>
         <Container fluid>
@@ -18,15 +25,19 @@ const SearchResults = ( ) => {
                 <h2>Results</h2>
             </Row>
             <Row className="mt-4">
-            {searchResults && searchResults.map((result, index) => (                    
+            {sortedSearchResults && sortedSearchResults.map((result, index) => ( 
+                               
                     <Col key={index} sm={12} md={4} className="d-flex justify-content-center">
                         <Card>
                             <Card.Title>
-                                <div className="custum-label">Match</div>
+                                <div className="custum-label">factual rating</div>
                                 <Container fluid id="card-title-container" className="d-flex justify-content-center">
                                     {result && result["Match"] !== undefined ? (
                                         <div className="outer">
-                                        <div className="dot" style={{ "--value": `calc(${result["Match"]} )` }}></div>
+
+                                        <div className="orbit-wrapper"  style={{  "--rotation": `${parseFloat(result["Match"].replace('%', '')) * 3.6}deg`}}>
+                                        <div className="dot" ></div>
+                                        </div>
                                         <div className="inner">
                                           <p id="progresbar-rating">{result["Match"]}</p>
                                         </div>
@@ -39,9 +50,9 @@ const SearchResults = ( ) => {
                             </Card.Title>
                         <Card.Body>
                             <h4>Source:</h4>
-                            {result && result.sources ? ( 
-                                <a href={result.sources}>
-                                    {new URL(result.sources).hostname}
+                            {result  ? ( 
+                                <a href={result["URL"]}>
+                                    {new URL(result["URL"]).hostname}
                                 </a>
                             ) : (
                             <p>No text available for this result</p>
