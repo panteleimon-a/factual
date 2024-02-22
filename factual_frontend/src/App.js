@@ -46,6 +46,13 @@ function App() {
                 const user_profile_temp = profileData.user_profile;
                 setUser(user_temp);
                 setUserProfile(user_profile_temp);
+              } else if (!response.ok){
+                const refreshed = await refreshToken();
+                if (refreshed) {
+                  fetchProfile(); // Retry fetching profile with new token
+                } else {
+                  console.error('Unable to refresh token.');
+                }
               } else {
                 console.error('Error fetching profile:', response.statusText);
               }
