@@ -104,9 +104,9 @@ AUTHENTICATION_BACKENDS = [
     #'accounts.backends.EmailBackend'
 ]
 
-'''
+
 CORS_ALLOW_CREDENTIALS = True
-'''
+
 #####
 
 ROOT_URLCONF = 'factualweb.urls'

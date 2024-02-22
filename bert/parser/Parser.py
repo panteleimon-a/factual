@@ -11,8 +11,8 @@ from selenium.webdriver.chrome.options import Options
 import browser_cookie3
 from factualweb.settings import ISALLOWED_TOKENS
 from fake_headers import Headers
-
-
+import time #giorgos_ster
+import concurrent.futures, requests
 def ChromeSocket(url):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     session=requests.Session()
@@ -56,9 +56,50 @@ class Parse():
         self.query=query
     def isallowed(self, webtext):
         pass
+
+
+
+    def fetch_and_process_url(self, url):
+
+        try:
+            soup = ChromeSocket(url)[0]
+            webtext = ''
+            for each in soup.find_all('p'):
+                webtext += ' ' + each.text
+            return [self.etl(webtext).preprocess()]
+        except requests.exceptions.ReadTimeout:
+            return ''
+
+    def text(self):
+        start_time = time.time()
+        links = [link for page in results(self.query, n_pages=3) for link in page]
+        print(f"Links collection execution time: {time.time() - start_time} seconds")
+
+        # Use ThreadPoolExecutor to process URLs in parallel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Schedule the execution of fetch_and_process_url for each URL
+            future_to_url = {executor.submit(self.fetch_and_process_url, url): url for url in links}
+            # Collect the results as they complete
+            text = []
+            for future in concurrent.futures.as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    result = future.result()
+                    text.append(result)
+                except Exception as exc:
+                    print(f"{url} generated an exception: {exc}")
+                    text.append('')
+
+        print(f"Total execution time: {time.time() - start_time} seconds")
+        return text, links
+
+    '''
     def text(self):
         links=[]
+        start_time = time.time()
         links=([link for page in results(self.query, n_pages=3) for link in page])
+        end_time = time.time()
+        print(f"Execution time: {end_time - start_time} seconds") #23-24s
         # test here
         text = [] # Initiate empty list to capture final results
         for url in links:
@@ -72,7 +113,11 @@ class Parse():
                 text.append([self.etl(webtext).preprocess()])
             except requests.exceptions.ReadTimeout:
                 text.append('')
+        second_end_time = time.time()
+        print(f"Execution time 2: {second_end_time - start_time} seconds") #220-240s
         return text, links
+
+    '''
     # Get the links as well as the titles of each link#
     def urls(self):
         url_name = []

@@ -13,6 +13,7 @@ export default function Layout({ isLoggedIn, setIsLoggedIn }) {
     setIsLoggedIn(false);
 
     navigate('/', { replace: true });
+    window.location.reload();
   };
   
     return (

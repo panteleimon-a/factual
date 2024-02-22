@@ -5,14 +5,14 @@ import SearchBar from "./SearchBar";
 const SearchResults = ( ) => {
   const location = useLocation();
   const searchResults = location.state ? location.state.searchResults : null;
-
+  console.log(searchResults);
   const sortedSearchResults = searchResults ? [...searchResults].sort((a, b) => {
     const matchA = typeof a["Match"] === 'string' ? parseFloat(a["Match"]) : a["Match"];
     const matchB = typeof b["Match"] === 'string' ? parseFloat(b["Match"]) : b["Match"];
   
     return matchB - matchA;
   }) : null;
-
+  console.log(sortedSearchResults);
   return (
     <div>
         <Container fluid>
