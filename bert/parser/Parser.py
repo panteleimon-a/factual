@@ -3,7 +3,6 @@ import urllib3
 from bs4 import BeautifulSoup
 import pandas as pd
 from bert.parser.get_user_agent import get_useragent
-from requests.packages import urllib3
 import re
 from pickle import FALSE
 from selenium import webdriver
@@ -13,40 +12,46 @@ from factualweb.settings import ISALLOWED_TOKENS
 from fake_headers import Headers
 import time #giorgos_ster
 import concurrent.futures, requests
-def ChromeSocket(url):
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    session=requests.Session()
-    session.verify = False
-    session.trust_env = False
-    headers= Headers(
-    # generate any browser & os headeers
-    headers=False  # don`t generate misc headers
-)
-    header=headers.generate()
-    cookies = browser_cookie3.chrome()
-    try:
-        r = session.get(url,headers=header ,allow_redirects=False ,cookies=cookies, timeout=30)
-    except requests.exceptions.InvalidHeader:
-        headers=get_useragent()
-        r = session.get(url,headers=header ,allow_redirects=False ,cookies=cookies, timeout=15)
-    _encoding = BeautifulSoup(r.text, "html5lib")
-    options = Options()
-    options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options)
-    return _encoding, driver
+# disable warnings for insecure requests
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Generates a list of lists (pages of urls)
-def results(query,n_pages):
-    links=[]
-    # Every 3-4 sessions open it
-    # Import options +ips kai vazo kai user agents kai den me anagnorizei
-    for page in range(1, n_pages):
-        url ='https://www.google.com/search?q='+str(re.sub(r"([^a-zA-Z0-9])", ' ',str(query))).replace(" ", "+")+ "&start=" +str((page - 1) * 10)
-        driver=ChromeSocket(url)[1]
+# Every 3-4 sessions open it
+# Import ips kai vazo kai user agents kai den me anagnorizei
+class ChromeSocket():
+    def __init__(self):
+        self.session=requests.Session()
+        self.session.verify = False
+        self.session.trust_env = False
+        headers= Headers(
+        # generate any browser & os headeers
+        headers=False  # don`t generate misc headers
+    )
+        self.header=headers.generate()
+        self.cookies = browser_cookie3.chrome()
+    def get_text(self, url):
+        try:
+            r = self.session.get(url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
+        except requests.exceptions.InvalidHeader:
+            headers=get_useragent()
+        r = self.session.get(url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
+        _encoding = BeautifulSoup(r.text, "html5lib")
+        return _encoding
+    def g_search(self, url):
+        links=[]
+        options = Options()
+        options.add_argument("--headless=new")
+        driver = webdriver.Chrome(options)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         search=soup.find_all('div', class_="yuRUbf")
         links.append([i.a.get('href') for i in search])
+        return links
+
+# Generates a list of lists (pages of urls)
+def results(query,n_pages):
+    for page in range(1, n_pages):
+        search_url ='https://www.google.com/search?q='+str(re.sub(r"([^a-zA-Z0-9])", ' ',str(query))).replace(" ", "+")+ "&start=" +str((page - 1) * 10)
+        links=ChromeSocket.g_search(search_url)
     return links
 
 class Parse():
@@ -56,24 +61,19 @@ class Parse():
         self.query=query
     def isallowed(self, webtext):
         pass
-
-
-
     def fetch_and_process_url(self, url):
-
         try:
-            soup = ChromeSocket(url)[0]
+            soup = ChromeSocket.get_text(url)
             webtext = ''
             for each in soup.find_all('p'):
                 webtext += ' ' + each.text
             return [self.etl(webtext).preprocess()]
         except requests.exceptions.ReadTimeout:
             return ''
-
     def text(self):
         start_time = time.time()
         links = [link for page in results(self.query, n_pages=3) for link in page]
-        print(f"Links collection execution time: {time.time() - start_time} seconds")
+        print(f"Article scraping collection execution time: {time.time() - start_time} seconds")
 
         # Use ThreadPoolExecutor to process URLs in parallel
         with concurrent.futures.ThreadPoolExecutor() as executor:
