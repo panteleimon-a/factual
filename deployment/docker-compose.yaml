@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  web:
+    build:
+      dockerfile: code/Dockerfile-GCP
+    command:
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+#  options:
+#    logging: CLOUD_LOGGING_ONLY
