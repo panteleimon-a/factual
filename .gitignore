@@ -62,7 +62,8 @@ aclImdb/train/labeledBow.feat
 bert/training/aclImdb/imdb.vocab
 .gitignore
 bert/training/aclImdb/train/unsupBow.feat
-API/tokenizer/vocab.txt
+API/tokenizer
+API/models
 .vercel
 .env
 node_modules
