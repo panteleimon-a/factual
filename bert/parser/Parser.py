@@ -30,10 +30,10 @@ class ChromeSocket():
         self.cookies = browser_cookie3.chrome()
     def get_text(self, url):
         try:
-            r = self.session.get(url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
+            r = self.session.get(url=url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
         except requests.exceptions.InvalidHeader:
-            headers=get_useragent()
-        r = self.session.get(url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
+            self.header=get_useragent()
+        r = self.session.get(url=url,headers=self.header ,allow_redirects=False ,cookies=self.cookies, timeout=15)
         _encoding = BeautifulSoup(r.text, "html5lib")
         return _encoding
     def g_search(self, url):
@@ -51,47 +51,39 @@ class ChromeSocket():
 def results(query,n_pages):
     for page in range(1, n_pages):
         search_url ='https://www.google.com/search?q='+str(re.sub(r"([^a-zA-Z0-9])", ' ',str(query))).replace(" ", "+")+ "&start=" +str((page - 1) * 10)
-        links=ChromeSocket.g_search(search_url)
+        links=ChromeSocket().g_search(url=search_url)
     return links
 
-class Parse():
-    def __init__(self, query, etl):
-        # Specify number of pages on google search, each page contains 10 #links
-        self.etl=etl
-        self.query=query
-    def isallowed(self, webtext):
-        pass
-    def fetch_and_process_url(self, url):
-        try:
-            soup = ChromeSocket.get_text(url)
-            webtext = ''
-            for each in soup.find_all('p'):
-                webtext += ' ' + each.text
-            return [self.etl(webtext).preprocess()]
-        except requests.exceptions.ReadTimeout:
-            return ''
-    def text(self):
-        start_time = time.time()
-        links = [link for page in results(self.query, n_pages=3) for link in page]
-        print(f"Article scraping collection execution time: {time.time() - start_time} seconds")
-
-        # Use ThreadPoolExecutor to process URLs in parallel
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Schedule the execution of fetch_and_process_url for each URL
-            future_to_url = {executor.submit(self.fetch_and_process_url, url): url for url in links}
-            # Collect the results as they complete
-            text = []
-            for future in concurrent.futures.as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    result = future.result()
-                    text.append(result)
-                except Exception as exc:
-                    print(f"{url} generated an exception: {exc}")
-                    text.append('')
-
-        print(f"Total execution time: {time.time() - start_time} seconds")
-        return text, links
+def parse(url, etl):
+    try:
+        soup = ChromeSocket().get_text(url=url)
+        webtext = ''
+        for each in soup.find_all('p'):
+            webtext += ' ' + each.text
+        return [etl(webtext).preprocess()]
+    except requests.exceptions.ReadTimeout:
+        return
+    
+def text(query, etl):
+    start_time = time.time()
+    links = [link for page in results(query=query, n_pages=3) for link in page]
+    print(f"Article scraping collection execution time: {time.time() - start_time} seconds")
+    # Use ThreadPoolExecutor to process URLs in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Schedule the execution of fetch_and_process_url for each URL
+        future_to_url = {executor.submit(parse, url=url,etl=etl): url for url in links}
+        # Collect the results as they complete
+        text = []
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                result = future.result()
+                text.append(result)
+            except Exception as exc:
+                print(f"{url} generated an exception: {exc}")
+                text.append('')
+    print(f"Total execution time: {time.time() - start_time} seconds")
+    return text, links
 
     '''
     def text(self):

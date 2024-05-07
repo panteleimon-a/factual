@@ -7,7 +7,7 @@
 import tensorflow as tf
 from pickle import FALSE
 import pandas as pd
-from bert.parser.Parser import Parse
+from bert.parser.Parser import text
 import nltk
 nltk.download('punkt')
 from nltk.corpus import stopwords
@@ -24,26 +24,25 @@ def get_sent(senttext, model, tokenizer):
   tf_predictions = tf.nn.softmax(tf_outputs["logits"][0], axis=-1)
   return tf_predictions.numpy()[1]
 
+# Cosine similarity
+# We preprocess both a and b, so no need for a preprocess step in the tokenizer, like etl.proprocess
+def compute_similarity(query, b):
+  vectorizer = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False) #tokenizer=self.preprocess
+  comp_lst=[query, b[0]]
+  tfidf = vectorizer.fit_transform(comp_lst)
+  cosine_similarities = linear_kernel(tfidf[0:1], tfidf).flatten()
+  return cosine_similarities[1]
+  
 class prod:
   def __init__(self, query, model, tokenizer, etl):
     self.en_stop=stopwords.words('english')
     self.etl=etl
-    self.Parse=Parse
     self.query=query
     self.model=model
     self.tokenizer=tokenizer
-  # Cosine similarity
-  # We preprocess both a and b, so no need for a preprocess step in the tokenizer, like etl.proprocess
-  def compute_similarity(self, b):
-    vectorizer = TfidfVectorizer(tokenizer=lambda i:i, lowercase=False) #tokenizer=self.preprocess
-    comp_lst=[self.query, b[0]]
-    tfidf = vectorizer.fit_transform(comp_lst)
-    cosine_similarities = linear_kernel(tfidf[0:1], tfidf).flatten()
-    return cosine_similarities[1]
   #This will return a list (not yet but close) of the sources and the score or similarity (words and sentiment)
   def comparison_list(self):
-    init=self.Parse(self.query, self.etl)
-    articles,links=init.text()
+    articles,links=text(self.query,self.etl)
     querysent=get_sent(self.query,self.model,self.tokenizer)
     sentlist=[]
     valid_urls=[]
@@ -51,7 +50,7 @@ class prod:
     j=0
     # Was articles[i]*1.25
     for i in range(len(articles)):
-      temp=(self.compute_similarity(articles[i])*1.25)
+      temp=(compute_similarity(self.query, articles[i])*1.25)
       # Take only non-empty/relevant articles
       if temp!=0 and articles[i][0]!=[]:
         sim.append(temp)
