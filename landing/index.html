@@ -267,7 +267,7 @@
   
   <div class="container">
     <div class="logo-container">
-      <img src="./assets/factual_logo_f_only.png" alt="FACTUAL Logo" id="logo">
+      <img src="./assets/factual_logo_f_only.png" alt="FACTUAL Logo" id="logo" width="120" height="120">
     </div>
 
     <div class="hero">
@@ -310,11 +310,13 @@
   <script>
     const logoImg = document.getElementById('logo');
     if (logoImg) {
-      let fallbackAttempted = false;
+      const fallbackSources = ['./assets/factual_logo_f_only.svg'];
+      let currentFallbackIndex = 0;
+      
       logoImg.addEventListener('error', function() {
-        if (!fallbackAttempted) {
-          fallbackAttempted = true;
-          this.src = './assets/factual_logo_f_only.svg';
+        if (currentFallbackIndex < fallbackSources.length) {
+          this.src = fallbackSources[currentFallbackIndex];
+          currentFallbackIndex++;
         } else {
           this.style.display = 'none';
         }
