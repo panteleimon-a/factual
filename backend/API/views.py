@@ -25,6 +25,13 @@ class SearchView(APIView):
         if not query:
             return Response({"error": "text/URL field is required"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Check if model and tokenizer are loaded
+        if ApiConfig.model is None or ApiConfig.tokenizer is None:
+            return Response(
+                {"error": "Model or tokenizer not loaded. Please ensure the model files are available."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        
         query = etl(query).preprocess()
         df = prod(query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer, etl=etl).comparison_list()
         # link is the column with hyperlinks
@@ -125,6 +132,13 @@ class AnalyzeAndMatchView(APIView):
             sentiment_data = model_response.json()
             
             # Step 2: Use the sentiment analysis to perform fact-checking
+            # Check if model and tokenizer are loaded
+            if ApiConfig.model is None or ApiConfig.tokenizer is None:
+                return Response(
+                    {"error": "Internal model or tokenizer not loaded. Please ensure the model files are available."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
             # Process the text through the existing ETL and comparison pipeline
             processed_query = etl(text).preprocess()
             df = prod(processed_query, model=ApiConfig.model, tokenizer=ApiConfig.tokenizer, etl=etl).comparison_list()
