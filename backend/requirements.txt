@@ -17,5 +17,21 @@ requests==2.31.0
 # WSGI server for production
 gunicorn==20.1.0
 
+# ML and NLP dependencies
+tensorflow==2.13.0
+transformers==4.30.0
+nltk==3.8.1
+scikit-learn==1.3.0
+pandas==2.0.3
+
+# Web scraping and parsing
+beautifulsoup4==4.12.2
+lxml==4.9.3
+html5lib==1.1
+selenium==4.11.2
+browser-cookie3==0.19.1
+fake-headers==1.0.2
+urllib3==2.0.4
+
 # Other dependencies
 Pillow==10.0.0
