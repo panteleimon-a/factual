@@ -8,7 +8,8 @@ from pickle import FALSE
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import browser_cookie3
-from factualweb.settings import ISALLOWED_TOKENS
+from django.conf import settings
+ISALLOWED_TOKENS = getattr(settings, 'ISALLOWED_TOKENS', [])
 from fake_headers import Headers
 import time #giorgos_ster
 import concurrent.futures, requests

@@ -99,8 +99,8 @@ credentials.json
 .DS_Store
 Thumbs.db
 
-# Docker
-.dockerignore
+# Docker volumes and data
+docker-compose.override.yml
 
 # Build artifacts
 build/
