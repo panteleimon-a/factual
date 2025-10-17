@@ -66,5 +66,43 @@ API/tokenizer
 API/models
 .vercel
 .env
+.env.local
+.env.production
 node_modules
 node-setup.txt
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Secrets and credentials
+credentials.json
+*.pem
+*.key
+*.crt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
