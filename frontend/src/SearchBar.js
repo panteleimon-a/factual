@@ -20,10 +20,10 @@ const SearchBar = () => {
       e.preventDefault();
       try{
         setLoading(true);
-        const apiUrl = "http://127.0.0.1:8000/"
-        
+        const apiUrl = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+        const endpoint = `${apiUrl}/api/`;
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
