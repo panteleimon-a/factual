@@ -41,6 +41,17 @@ factual/
 - PostgreSQL (for production)
 - Docker & Docker Compose (optional)
 
+### Automated Setup (Recommended)
+
+Use the provided setup script for quick installation:
+
+```bash
+git clone <repository-url>
+cd factual
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
 ### Local Development Setup
 
 #### 1. Clone the repository
