@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/regional_news_carousel.dart';
+import '../widgets/worldwide_news_list.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -160,25 +161,8 @@ class HomeScreen extends StatelessWidget {
                     
                     const SizedBox(height: 16),
                     
-                    // Placeholder for worldwide news list
-                    Container(
-                      height: 300,
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Worldwide News List\n(To be implemented)',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Worldwide news list
+                    const WorldwideNewsList(),
                     
                     const SizedBox(height: 32),
                   ],
