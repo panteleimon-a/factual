@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class LocationService {
   Future<Position> determinePosition() async {
@@ -24,5 +25,17 @@ class LocationService {
     } 
 
     return await Geolocator.getCurrentPosition();
+  }
+
+  Future<String?> getCountryCode(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        return placemarks.first.isoCountryCode;
+      }
+    } catch (e) {
+      print('Geocoding error: $e');
+    }
+    return null;
   }
 }

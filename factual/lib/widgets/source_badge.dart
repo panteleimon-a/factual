@@ -26,7 +26,7 @@ class SourceBadge extends StatelessWidget {
           source.name,
           style: Theme.of(context).textTheme.labelSmall,
         ),
-        if (showCredibility && source.credibilityScore != null) ...[
+        if (showCredibility) ...[
           const SizedBox(width: 6),
           _buildCredibilityIndicator(context),
         ],
@@ -35,7 +35,7 @@ class SourceBadge extends StatelessWidget {
   }
 
   Widget _buildCredibilityIndicator(BuildContext context) {
-    final score = source.credibilityScore ?? 0.0;
+    final score = source.credibilityScore;
     final color = score >= 0.7
         ? Theme.of(context).colorScheme.primary
         : score >= 0.4

@@ -19,19 +19,19 @@ void main() async {
   final llmService = LLMService();
   final newsService = NewsService();
   
-  runApp(FactualApp(
+  runApp(factualApp(
     databaseService: databaseService,
     newsService: newsService,
     llmService: llmService,
   ));
 }
 
-class FactualApp extends StatelessWidget {
+class factualApp extends StatelessWidget {
   final DatabaseService databaseService;
   final NewsService newsService;
   final LLMService llmService;
 
-  const FactualApp({
+  const factualApp({
     super.key,
     required this.databaseService,
     required this.newsService,
@@ -59,8 +59,8 @@ class FactualApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp.router(
-        title: 'Factual',
-        theme: FactualTheme.lightTheme,
+        title: 'factual',
+        theme: factualTheme.lightTheme,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
       ),

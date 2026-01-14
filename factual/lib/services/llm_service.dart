@@ -1,18 +1,18 @@
+import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/news_article.dart';
+import '../config/api_config.dart';
 
 /// Service for interacting with Google Gemini AI
 /// Handles sentiment analysis, fact-checking, and duplicate detection
 class LLMService {
-  static const String _defaultApiKey = 'AIzaSyCz2nTDLjXkO9N_HMXo34KiPWVkd6nPLU8';
-  
   final GenerativeModel _model;
   bool _isInitialized = false;
 
   LLMService({String? apiKey}) 
       : _model = GenerativeModel(
           model: 'gemini-2.0-flash',
-          apiKey: apiKey ?? _defaultApiKey,
+          apiKey: apiKey ?? ApiConfig.geminiApiKey,
         ) {
     _isInitialized = true;
   }
@@ -195,7 +195,7 @@ Respond with JSON only:
     return duplicates;
   }
 
-  // ==================== QUERY PROCESSING ====================
+  // ==================== QUERY PROCESSING & FACT CHECKING ====================
 
   /// Process and enhance user search query
   /// Returns enhanced query with suggestions
@@ -235,6 +235,53 @@ Respond with JSON only:
     }
   }
 
+  /// Perform a fact-check search using SR Protocol Utility B
+  Future<Map<String, dynamic>> performFactCheck(String query) async {
+    if (!_isInitialized) {
+      throw LLMServiceException('LLM Service not initialized');
+    } // Protocol B: User Query / Fact-Check implementation
+
+    try {
+      final prompt = '''
+--- SR EDITORIAL PROTOCOL: UTILITY B ---
+Perform a rigorous fact-check on this user query.
+
+Query: "$query"
+
+INSTRUCTIONS:
+1. Search Phase: Retrieve information primarily from Tier 1 (Official Data) and Tier 2 (Public Service like Reuters, BBC, SR) sources.
+2. Synthesis: 
+   - If sources agree: State as fact.
+   - If sources disagree: State the controversy (Source A vs Source B).
+   - If unverified: Explicitly state "No credible evidence found."
+3. Tone: Clinical, non-judgmental, precise.
+
+Respond with JSON only:
+{
+  "answer": "Direct, verified answer...",
+  "certainty": "High|Medium|Low",
+  "sources": ["Source 1", "Source 2"],
+  "controversy": "None|Details of disagreement",
+  "verdict": "Verified|Disputed|Debunked|Unverified"
+}
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+
+      if (response.text == null) {
+        throw LLMServiceException('Empty response from Gemini API');
+      }
+
+      String jsonStr = response.text!.trim();
+      jsonStr = jsonStr.replaceAll('```json', '').replaceAll('```', '').trim();
+      
+      return _parseJson(jsonStr);
+    } catch (e) {
+      throw LLMServiceException('Fact check failed: $e');
+    }
+  }
+
   // ==================== ARTICLE SUMMARIZATION ====================
 
   /// Generate a concise summary of an article
@@ -259,6 +306,61 @@ Provide ONLY the summary, no other text.
       return response.text?.trim() ?? 'Summary unavailable';
     } catch (e) {
       throw LLMServiceException('Summarization failed: $e');
+    }
+  }
+
+  // ==================== FULL ARTICLE ANALYSIS ====================
+  
+  /// Generate comprehensive analysis for an article
+  Future<Map<String, dynamic>> generateAnalysis(NewsArticle article) async {
+    if (!_isInitialized) {
+      throw LLMServiceException('LLM Service not initialized');
+    }
+
+    try {
+      final prompt = '''
+--- SR EDITORIAL PROTOCOL MODE ---
+You are an impartial analyst following the Sveriges Radio (SR) Editorial Handbook.
+Core Directives:
+- Prioritize Tier 1/2 sources (Public Service, established agencies).
+- Distinguish between bias of selection and bias of presentation.
+- Use the Two-Source Rule for verification.
+- Output Clinical, non-judgmental tone.
+
+Analyze the following news article for the "factual" platform:
+1. Concise, factual summary (2-3 sentences, neutral language).
+2. Bias detection: Identify publisher tier (1-5) and presentation bias (emotive adjectives, omissions). Provide score (0.0=Neutral, 1.0=Highly Biased).
+3. Sentiment analysis: Clinical assessment (-1.0 to 1.0).
+4. Key facts: List 3-5 claims. Graded by verification status (Verified by consensus / Outlier).
+5. Credibility verdict: Based strictly on source tier and fact consistency.
+
+Title: ${article.title}
+Source: ${article.source.name}
+Content: ${article.content.isNotEmpty ? article.content : article.summary}
+
+Respond ONLY with JSON in this exact format:
+{
+  "summary": "...",
+  "bias": {"type": "...", "score": 0.0, "analysis": "Source Tier X. Presentation: ..."},
+  "sentiment": {"type": "...", "score": 0.0},
+  "keyFacts": ["[VERIFIED] ...", "[OUTLIER] ..."],
+  "verdict": "Credibility: High/Medium/Low. Reason: ..."
+}
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+
+      if (response.text == null) {
+        throw LLMServiceException('Empty response from Gemini API');
+      }
+
+      String jsonStr = response.text!.trim();
+      jsonStr = jsonStr.replaceAll('```json', '').replaceAll('```', '').trim();
+      
+      return _parseJson(jsonStr);
+    } catch (e) {
+      throw LLMServiceException('Full analysis failed: $e');
     }
   }
 
@@ -382,6 +484,76 @@ Respond with JSON only:
       }
     } catch (e) {
       throw LLMServiceException('Stream generation failed: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> generateGlobalContext(NewsArticle article) async {
+    final prompt = '''
+--- SR EDITORIAL PROTOCOL: UTILITY C ---
+Analyze this trending global article:
+Title: ${article.title}
+Source: ${article.source.name}
+
+1. Create a <100 word abstract using neutral, clinical language. Focus on the hard news event.
+2. Generate reproduction graph data (Life cycle). 
+Identify at least 4 key points in time (e.g., 0h, 2h, 6h, 12h) and the volume/spread at each.
+
+Respond ONLY with JSON:
+{
+  "abstract": "...",
+  "graphData": [
+    {"time": "0h", "volume": 1, "source": "..."},
+    {"time": "2h", "volume": 15, "source": "Reuters/AP"},
+    ...
+  ]
+}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text;
+      if (text == null) return {};
+      
+      final cleaned = text.replaceAll('```json', '').replaceAll('```', '').trim();
+      return json.decode(cleaned);
+    } catch (e) {
+      print('Global context generation failed: $e');
+      return {};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getReproductionGraph(NewsArticle article) async {
+    final prompt = '''
+--- SR EDITORIAL PROTOCOL: REPRODUCTION GRAPH ---
+Trace the life cycle of this news story:
+Title: ${article.title}
+Source: ${article.source.name}
+
+Identify:
+1. Originating source (if possible).
+2. Key secondary reports (agencies, major outlets).
+3. Propagation timeline (Estimated).
+4. Major changes in framing/bias across outlets.
+
+Respond ONLY with a JSON list of steps:
+[
+  {"time": "0h", "source": "...", "action": "First reported", "framing": "..."},
+  {"time": "+2h", "source": "Reuters", "action": "Confirmed with agency report", "framing": "Clinical"},
+  ...
+]
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text;
+      if (text == null) return [];
+      
+      final cleaned = text.replaceAll('```json', '').replaceAll('```', '').trim();
+      final List<dynamic> list = json.decode(cleaned);
+      return list.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Reproduction graph failed: $e');
+      return [];
     }
   }
 }

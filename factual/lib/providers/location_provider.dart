@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter/material.dart';
 import '../models/location_data.dart';
+import '../services/location_service.dart';
+import '../services/database_service.dart';
 
 class LocationProvider with ChangeNotifier {
+  final LocationService _locationService = LocationService();
   LocationData? _currentLocation;
   double? _selectedRadius;
   bool _isLoading = false;
@@ -19,29 +21,27 @@ class LocationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Check permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied');
-      }
-
-      // Get position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+      final position = await _locationService.determinePosition();
+      final countryCode = await _locationService.getCountryCode(
+        position.latitude, 
+        position.longitude,
       );
 
       _currentLocation = LocationData(
         latitude: position.latitude,
         longitude: position.longitude,
+        countryCode: countryCode,
         timestamp: DateTime.now(),
       );
+      
+      // Log location to local database
+      await DatabaseService().logLocationUpdate(
+        'default_user', // Using mock ID for now
+        position.latitude,
+        position.longitude,
+        countryCode,
+      );
+
       _error = null;
     } catch (e) {
       _error = e.toString();

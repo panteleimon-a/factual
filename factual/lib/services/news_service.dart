@@ -6,15 +6,18 @@ import '../services/database_service.dart';
 import '../services/llm_service.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/api_config.dart';
+
 /// Service for fetching news from multiple APIs
 class NewsService {
   final DatabaseService _db = DatabaseService();
   final LLMService _llm = LLMService();
   final Uuid _uuid = const Uuid();
 
-  // Free API keys (replace with actual keys)
-  static const String _newsApiKey = 'YOUR_NEWSAPI_KEY_HERE'; // newsapi.org (free tier: 100 req/day)
-  static const String _newsDataApiKey = 'YOUR_NEWSDATA_KEY_HERE'; // newsdata.io (free tier: 200 req/day)
+  // API keys from central config
+  final String _newsApiKey = ApiConfig.newsApiKey;
+  // Currently we use NewsAPI primary, NewsData as secondary (if key added to config)
+  final String _newsDataApiKey = 'YOUR_NEWSDATA_KEY_HERE'; 
 
   // API endpoints
   static const String _newsApiUrl = 'https://newsapi.org/v2';

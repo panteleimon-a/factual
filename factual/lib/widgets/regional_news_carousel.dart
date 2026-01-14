@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:io' show Platform;
-import '../config/api_config.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import '../providers/news_provider.dart';
+import '../providers/location_provider.dart';
+import '../models/news_article.dart';
 
 class RegionalNewsCarousel extends StatefulWidget {
   const RegionalNewsCarousel({super.key});
@@ -16,224 +15,232 @@ class RegionalNewsCarousel extends StatefulWidget {
 }
 
 class _RegionalNewsCarouselState extends State<RegionalNewsCarousel> {
-  List<dynamic> _newsArticles = [];
-  String _locationName = "Detecting location...";
-  bool _isLoading = true;
-
-  // Replace with your NewsAPI key from newsapi.org (free tier: 100 req/day)
-  final String _apiKey = ApiConfig.newsApiKey;
+  late PageController _pageController;
+  double _currentPage = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _initAndroidOptimizedFlow();
-  }
-
-  Future<void> _initAndroidOptimizedFlow() async {
-    try {
-      bool serviceEnabled;
-      LocationPermission permission;
-
-      // 1. Check if location services are enabled
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) setState(() => _locationName = "Location disabled");
-        _fetchNews("Washington"); // Fallback
-        return;
-      }
-
-      // 2. Check permissions
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) setState(() => _locationName = "Permission denied");
-          _fetchNews("Washington"); // Fallback
-          return;
-        }
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) setState(() => _locationName = "Location permanently denied");
-        _fetchNews("Washington"); // Fallback
-        return;
-      }
-
-      // 3. Get Position with Android-specific settings
-      // Use simpler settings that are compatible with the geolocator version
-      // The user provided legacy AndroidSettings which might be for older geolocator versions or specific implementations
-      // We'll use the platform-agnostic approach but ensure we handle errors gracefully as requested
-      
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-      );
-
-      // 4. Convert Lat/Lng to Area Name
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude, position.longitude);
-      
-      if (placemarks.isNotEmpty) {
-        // Prefer administrativeArea (State/Province) -> locality (City) -> country
-        String area = placemarks.first.administrativeArea ?? 
-                      placemarks.first.locality ?? 
-                      placemarks.first.country ?? 
-                      "Washington";
-        
-        if (mounted) {
-          setState(() {
-            _locationName = area;
-          });
-        }
-        
-        await _fetchNews(area);
-      } else {
-        _fetchNews("Washington");
-      }
-      
-    } catch (e) {
-      debugPrint("Location/News Error: $e");
-      if (mounted) {
-         _fetchNews("Washington");
-      }
-    }
-  }
-
-  Future<void> _fetchNews(String area) async {
-    try {
-      final url = Uri.parse(
-        'https://newsapi.org/v2/everything?q=$area&sortBy=publishedAt&pageSize=10&apiKey=$_apiKey'
-      );
-
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        // Filter: Only articles with images, take first 3
-        final List filtered = (data['articles'] as List)
-            .where((a) => a['urlToImage'] != null && a['urlToImage'].toString().isNotEmpty)
-            .take(3)
-            .toList();
-
-        if (mounted) {
-          setState(() {
-            _newsArticles = filtered;
-            _isLoading = false;
-          });
-        }
-      } else {
-        _useMockData();
-      }
-    } catch (e) {
-      debugPrint('Error fetching news: $e');
-      _useMockData();
-    }
-  }
-
-  void _useMockData() {
-    if (mounted) {
+    _pageController = PageController(viewportFraction: 0.85);
+    _pageController.addListener(() {
       setState(() {
-        _newsArticles = [
-          {
-            'title': 'Συνάντηση Trump-Putin στην Αλάσκα',
-            'urlToImage': 'https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=News+1',
-            'source': {'name': 'Mock News'},
-          },
-          {
-            'title': 'Wonderplant: Πράσινο φως από την ΕΕ για τη mega επένδυση 165-εκατ. στην Πτολεμαΐδα',
-            'urlToImage': 'https://via.placeholder.com/300x200/50C878/FFFFFF?text=News+2',
-            'source': {'name': 'Mock News'},
-          },
-          {
-            'title': 'Νέες εξελίξεις στην ελληνική οικονομία',
-            'urlToImage': 'https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=News+3',
-            'source': {'name': 'Mock News'},
-          },
-        ];
-        _isLoading = false;
+        _currentPage = _pageController.page ?? 0.0;
       });
-    }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return SizedBox(
-        height: 220,
-        child: Center(
-          child: CircularProgressIndicator(color: Colors.black),
-        ),
-      );
-    }
+    return Consumer2<NewsProvider, LocationProvider>(
+      builder: (context, newsProvider, locProvider, child) {
+        final isLoading = newsProvider.isRegionalLoading || locProvider.isLoading;
+        
+        if (isLoading) {
+          return _buildSkeletonLoader();
+        }
 
-    if (_newsArticles.isEmpty) {
-      return SizedBox(
-        height: 220,
-        child: Center(
-          child: Text(
-            'No news available for $_locationName',
-            style: GoogleFonts.roboto(fontSize: 16, color: Colors.black54),
+        final articles = newsProvider.regionalArticles;
+
+        if (articles.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return SizedBox(
+          height: 260,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: articles.length,
+            itemBuilder: (context, index) {
+              return _buildCarouselItem(articles[index], index);
+            },
           ),
-        ),
-      );
-    }
-    
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _newsArticles.length,
-        itemBuilder: (context, index) {
-          final article = _newsArticles[index];
-          return GestureDetector(
-             onTap: () {
-               // Push to detail screen (using placeholder or existing route)
-               context.push('/regional-news'); 
-             },
-             child: Container(
-              width: 280,
-              margin: const EdgeInsets.only(right: 16),
+        );
+      },
+    );
+  }
+
+  Widget _buildCarouselItem(NewsArticle article, int index) {
+    // Dynamic Transition Logic: Scale and Rotation based on page offset
+    double relativePosition = index - _currentPage;
+    double scale = (1 - (relativePosition.abs() * 0.15)).clamp(0.85, 1.0);
+    double opacity = (1 - (relativePosition.abs() * 0.5)).clamp(0.5, 1.0);
+
+    return Opacity(
+      opacity: opacity,
+      child: Transform.scale(
+        scale: scale,
+        child: GestureDetector(
+          onTap: () => context.push('/article-detail', extra: article),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Image
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      height: 140,
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: Image.network(
-                        article['urlToImage'] ?? '',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, size: 50, color: Colors.grey),
-                          );
-                        },
-                      ),
+                  Expanded(
+                    flex: 3,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (article.imageUrl != null)
+                          Image.network(
+                            article.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          )
+                        else
+                          _buildPlaceholder(),
+                        
+                        // Gradient Overlay for readability
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.6),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        // Category/Source Badge
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              article.source.name.toUpperCase(),
+                              style: GoogleFonts.roboto(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Title
-                  Text(
-                    article['title'] ?? 'No title',
-                    style: GoogleFonts.roboto(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                      height: 1.2,
+                  
+                  // Content
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            article.title,
+                            style: GoogleFonts.roboto(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 14, color: Colors.black38),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${DateTime.now().difference(article.publishedAt).inHours}h ago',
+                                style: GoogleFonts.roboto(fontSize: 12, color: Colors.black38),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          );
-        },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLoader() {
+    return SizedBox(
+      height: 260,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[200]!,
+        highlightColor: Colors.white,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 3,
+          itemBuilder: (_, __) => Container(
+            width: 300,
+            margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SizedBox(
+      height: 220,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.map_outlined, size: 48, color: Colors.black12),
+            const SizedBox(height: 12),
+            Text(
+              'No regional news available',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black45),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: Colors.grey[100],
+      child: const Center(
+        child: Icon(Icons.image_not_supported_outlined, color: Colors.black12),
       ),
     );
   }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../widgets/notification_settings_widget.dart';
-import '../widgets/bottom_nav_bar.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/factual_header.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,182 +11,174 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _voiceSearchEnabled = false;
-  bool _locationSharingEnabled = true;
-  ThemeMode _selectedTheme = ThemeMode.light;
+  bool _pushNotifications = true;
+  bool _emailUpdates = false;
+  bool _locationDiscovery = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Settings',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Notifications Section
-          Text(
-            'NOTIFICATIONS',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const NotificationSettingsWidget(),
-          const SizedBox(height: 32),
-
-          // App Settings Section
-          Text(
-            'APP SETTINGS',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Voice Search'),
-                  subtitle: const Text('Enable voice input for searches'),
-                  value: _voiceSearchEnabled,
-                  onChanged: (value) {
-                    setState(() => _voiceSearchEnabled = value);
-                  },
-                ),
-                const Divider(),
-                SwitchListTile(
-                  title: const Text('Location Sharing'),
-                  subtitle: const Text('Share location for local news'),
-                  value: _locationSharingEnabled,
-                  onChanged: (value) {
-                    setState(() => _locationSharingEnabled = value);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  title: const Text('Theme'),
-                  subtitle: Text(_getThemeLabel(_selectedTheme)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showThemeDialog(),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Account Section
-          Text(
-            'ACCOUNT',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text('Profile'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {},
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined),
-                  title: const Text('Privacy Policy'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {},
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.description_outlined),
-                  title: const Text('Terms of Service'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // About
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'factual News v1.0.0',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '© 2024 factual',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
-    );
-  }
-
-  String _getThemeLabel(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.system:
-        return 'System Default';
-    }
-  }
-
-  void _showThemeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Theme'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: Colors.white,
+      appBar: const factualHeader(),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('Light'),
-              value: ThemeMode.light,
-              groupValue: _selectedTheme,
-              onChanged: (value) {
-                setState(() => _selectedTheme = value!);
-                Navigator.pop(context);
-              },
+            Text(
+              'Settings',
+              style: GoogleFonts.roboto(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
             ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Dark'),
-              value: ThemeMode.dark,
-              groupValue: _selectedTheme,
-              onChanged: (value) {
-                setState(() => _selectedTheme = value!);
-                Navigator.pop(context);
-              },
+            const SizedBox(height: 48),
+            
+            _buildSectionHeader('Preferences'),
+            _buildSwitchItem('Push Notifications', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+            _buildSwitchItem('Email Updates', _emailUpdates, (v) => setState(() => _emailUpdates = v)),
+            _buildSwitchItem('Location Discovery', _locationDiscovery, (v) => setState(() => _locationDiscovery = v)),
+            
+            const SizedBox(height: 40),
+            
+            _buildSectionHeader('Account'),
+            _buildLinkItem('Account Details'),
+            _buildLinkItem('Privacy Policy'),
+            _buildLinkItem('Terms of Service'),
+            
+            const SizedBox(height: 40),
+            
+            _buildSectionHeader('Debug (Pilot)'),
+            _buildLinkItem('Analytics & Export', onTap: () => context.push('/debug-analytics')),
+            
+            const SizedBox(height: 40),
+            
+            _buildSectionHeader('App Info'),
+            _buildInfoItem('Version', '1.0.0 (Build 42)'),
+            _buildInfoItem('Build Date', 'Dec 20, 2024'),
+            
+            const SizedBox(height: 64),
+            
+            Center(
+              child: Text(
+                'factual',
+                style: GoogleFonts.robotoCondensed(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black26,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ),
-            RadioListTile<ThemeMode>(
-              title: const Text('System Default'),
-              value: ThemeMode.system,
-              groupValue: _selectedTheme,
-              onChanged: (value) {
-                setState(() => _selectedTheme = value!);
-                Navigator.pop(context);
-              },
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                '© 2024 factual News Inc.',
+                style: GoogleFonts.roboto(
+                  fontSize: 12,
+                  color: Colors.black26,
+                ),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.roboto(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: Colors.black26,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwitchItem(String title, bool value, ValueChanged<bool> onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const Spacer(),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeColor: Colors.black,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkItem(String title, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const Spacer(),
+          const Icon(Icons.chevron_right, color: Colors.black12, size: 24),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 15,
+              color: Colors.black38,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/news_article.dart';
 
 class NewsCard extends StatelessWidget {
@@ -13,17 +14,10 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Figma "ArticleCard" specs:
-    // - Horizontal layout
-    // - Gap between items
-    // - Image: Right side, Rounded pill shape
-    // - Text: Left side
-    
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        // Add divider at bottom to mimic list style if needed, or rely on ListView separator
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,105 +26,117 @@ class NewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sentiment Badge (Optional - added for feature completeness)
-                  if (article.sentiment != 'neutral')
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getSentimentColor(context, article.sentiment).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: _getSentimentColor(context, article.sentiment)),
-                      ),
-                      child: Text(
-                        article.sentiment.toUpperCase(),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: _getSentimentColor(context, article.sentiment),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
                   // Title
                   Text(
                     article.title,
-                    style: Theme.of(context).textTheme.titleLarge, // H3 style
+                    style: GoogleFonts.roboto(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      height: 1.1,
+                      letterSpacing: -0.5,
+                    ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                   
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   
-                  // Metadata Row
-                  Row(
-                    children: [
-                      Text(
-                        article.source.name,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '•',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _getTimeAgo(article.publishedAt),
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                    ],
+                  // Metadata / Summary Snippet
+                  Text(
+                    article.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.black45,
+                      height: 1.2,
+                    ),
                   ),
+
+                  const SizedBox(height: 12),
+
+                  // Location / Source
+                  _buildMetadataRow(context),
                 ],
               ),
             ),
             
             const SizedBox(width: 16),
             
-            // Right Image (Figma Spec: 205x104px (scaled down), Rounded Pill)
-            // Using aspect ratio to maintain shape
-            if (article.imageUrl != null)
-              Container(
-                width: 120,
-                height: 80, // Scaled down for mobile list view
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20), // Pill-like
-                  image: DecorationImage(
-                    image: NetworkImage(article.imageUrl!),
-                    fit: BoxFit.cover,
-                  ),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 120,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+            // Right Image (Figma Spec: 205x104px)
+            _buildArticleImage(context),
           ],
         ),
       ),
     );
   }
 
-  Color _getSentimentColor(BuildContext context, String sentiment) {
-    switch (sentiment.toLowerCase()) {
-      case 'positive':
-        return Theme.of(context).colorScheme.primary; // Green
-      case 'negative':
-        return Theme.of(context).colorScheme.error; // Red
-      default:
-        return Theme.of(context).colorScheme.outlineVariant; // Gray
+  Widget _buildMetadataRow(BuildContext context) {
+    return Row(
+      children: [
+        if (article.location != null && article.location!.isNotEmpty) ...[
+          const Icon(Icons.location_on_rounded, size: 14, color: Colors.black38),
+          const SizedBox(width: 4),
+          Text(
+            article.location!,
+            style: GoogleFonts.roboto(fontSize: 12, color: Colors.black38),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Text(
+          article.source.name,
+          style: GoogleFonts.roboto(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '•',
+          style: TextStyle(color: Colors.black12),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          _getTimeAgo(article.publishedAt),
+          style: GoogleFonts.roboto(fontSize: 12, color: Colors.black38),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArticleImage(BuildContext context) {
+    if (article.imageUrl == null) {
+      return Container(
+        width: 140,
+        height: 80,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F0F0),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.image_not_supported_rounded, color: Colors.black12, size: 30),
+      );
     }
+
+    return Container(
+      width: 140, // Scaled for mobile width while keeping aspect ratio
+      height: 80,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        image: DecorationImage(
+          image: NetworkImage(article.imageUrl!),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getTimeAgo(DateTime dateTime) {

@@ -16,6 +16,9 @@ import '../screens/sign_in_screen.dart';
 import '../screens/sign_up_screen.dart';
 import '../screens/forgot_password_screen.dart';
 import '../screens/regional_news_detail_screen.dart';
+import '../screens/worldwide_deep_analysis_screen.dart';
+import '../screens/query_analysis_screen.dart';
+import '../screens/debug_analytics_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/loading',
@@ -63,26 +66,15 @@ final router = GoRouter(
       },
     ),
     GoRoute(
-      path: '/article',
+      path: '/article-detail',
       builder: (context, state) {
         final article = state.extra as NewsArticle;
         return ArticleDetailScreen(article: article);
       },
     ),
     GoRoute(
-      path: '/details/:id',
-      builder: (context, state) {
-        final id = state.pathParameters['id'] ?? '';
-        return NewsDetailScreen(articleId: id);
-      },
-    ),
-    GoRoute(
       path: '/map',
       builder: (context, state) => const MapScreen(),
-    ),
-    GoRoute(
-      path: '/history',
-      builder: (context, state) => const SearchHistoryScreen(),
     ),
     GoRoute(
       path: '/settings',
@@ -91,6 +83,21 @@ final router = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/worldwide-deep',
+      builder: (context, state) => const WorldwideDeepAnalysisScreen(),
+    ),
+    GoRoute(
+      path: '/query-analysis',
+      builder: (context, state) {
+        final query = state.extra as String;
+        return QueryAnalysisScreen(query: query);
+      },
+    ),
+    GoRoute(
+      path: '/debug-analytics',
+      builder: (context, state) => const DebugAnalyticsScreen(),
     ),
   ],
 );

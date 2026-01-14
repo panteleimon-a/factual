@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class FactualTheme {
+class factualTheme {
   // 1. Color Palette (Extracted from Figma)
   static const Color _brandBlack = Color(0xFF000000);
   static const Color _white = Color(0xFFFFFFFF);

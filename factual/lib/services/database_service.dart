@@ -119,6 +119,31 @@ class DatabaseService {
       )
     ''');
 
+    // User interactions table for personalization
+    await db.execute('''
+      CREATE TABLE user_interactions(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT NOT NULL,
+        articleId TEXT NOT NULL,
+        topics TEXT,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Location history table
+    await db.execute('''
+      CREATE TABLE location_history(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        countryCode TEXT,
+        timestamp TEXT NOT NULL,
+        FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+      )
+    ''');
+
     // Create indexes for faster queries
     await db.execute('CREATE INDEX idx_search_userId ON search_queries(userId)');
     await db.execute('CREATE INDEX idx_search_timestamp ON search_queries(timestamp)');
@@ -209,6 +234,15 @@ class DatabaseService {
     );
 
     return maps.map((map) => _searchQueryFromMap(map)).toList();
+  }
+  
+  Future<int> getSearchCount(String userId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM search_queries WHERE userId = ?',
+      [userId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   Future<int> deleteSearchQuery(String queryId) async {
@@ -470,6 +504,61 @@ class DatabaseService {
       where: 'userId = ? AND key = ?',
       whereArgs: [userId, key],
     );
+  }
+
+  // ==================== PERSONALIZATION OPERATIONS ====================
+
+  Future<void> logArticleView(String userId, String articleId, List<String> topics) async {
+    final db = await database;
+    await db.insert('user_interactions', {
+      'userId': userId,
+      'articleId': articleId,
+      'topics': topics.join(','),
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+  
+  Future<int> getInteractionCount(String userId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM user_interactions WHERE userId = ?',
+      [userId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<List<String>> getTopInterestedTopics(String userId, {int limit = 5}) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.rawQuery('''
+      SELECT topics, COUNT(*) as count
+      FROM user_interactions
+      WHERE userId = ?
+      GROUP BY topics
+      ORDER BY count DESC
+      LIMIT ?
+    ''', [userId, limit]);
+
+    List<String> allTopics = [];
+    for (var row in results) {
+      final topicsStr = row['topics'] as String?;
+      if (topicsStr != null && topicsStr.isNotEmpty) {
+        allTopics.addAll(topicsStr.split(',').map((t) => t.trim()));
+      }
+    }
+    
+    // De-duplicate and return top N
+    return allTopics.toSet().take(limit).toList();
+  }
+
+  Future<void> logLocationUpdate(String userId, double lat, double lng, String? country) async {
+    final db = await database;
+    await db.insert('location_history', {
+      'userId': userId,
+      'latitude': lat,
+      'longitude': lng,
+      'countryCode': country,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
   }
 
   // ==================== HELPER METHODS ====================
