@@ -1,9 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both email and password')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // DUMMY AUTH: Login anonymously regardless of input
+      await Provider.of<UserProvider>(context, listen: false).signInAnonymously();
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGuestLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await Provider.of<UserProvider>(context, listen: false).signInAnonymously();
+      // Navigation is handled by auth state listener or manual push
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Guest login failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +107,8 @@ class SignInScreen extends StatelessWidget {
                 
                 // Email Field
                 TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Enter your email',
                     hintStyle: GoogleFonts.urbanist(
@@ -72,6 +137,7 @@ class SignInScreen extends StatelessWidget {
                 
                 // Password Field
                 TextField(
+                  controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
@@ -122,10 +188,7 @@ class SignInScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to home after login
-                      context.go('/');
-                    },
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
@@ -134,11 +197,42 @@ class SignInScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
+                    child: _isLoading 
+                      ? const SizedBox(
+                          height: 20, 
+                          width: 20, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        )
+                      : Text(
+                          'Login',
+                          style: GoogleFonts.urbanist(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Guest Login Button (For Beta Testing)
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _handleGuestLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
                     child: Text(
-                      'Login',
+                      'Continue as Guest',
                       style: GoogleFonts.urbanist(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -171,11 +265,11 @@ class SignInScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildSocialButton(Icons.facebook, const Color(0xFF1877F2)),
+                    _buildSocialButton(Icons.facebook, const Color(0xFF1877F2), _handleGuestLogin),
                     const SizedBox(width: 12),
-                    _buildSocialButton(Icons.g_mobiledata, const Color(0xFFDB4437)),
+                    _buildSocialButton(Icons.g_mobiledata, const Color(0xFFDB4437), _handleGuestLogin),
                     const SizedBox(width: 12),
-                    _buildSocialButton(Icons.apple, Colors.black),
+                    _buildSocialButton(Icons.apple, Colors.black, _handleGuestLogin),
                   ],
                 ),
                 
@@ -221,15 +315,19 @@ class SignInScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialButton(IconData icon, Color color) {
-    return Container(
-      width: 88,
-      height: 56,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildSocialButton(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 88,
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE8ECF4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 24),
       ),
-      child: Icon(icon, color: color, size: 24),
     );
   }
 }

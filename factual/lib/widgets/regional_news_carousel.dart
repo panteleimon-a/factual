@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import '../providers/news_provider.dart';
 import '../providers/location_provider.dart';
 import '../models/news_article.dart';
+import '../services/user_activity_service.dart';
 
 class RegionalNewsCarousel extends StatefulWidget {
   const RegionalNewsCarousel({super.key});
@@ -76,7 +77,11 @@ class _RegionalNewsCarouselState extends State<RegionalNewsCarousel> {
       child: Transform.scale(
         scale: scale,
         child: GestureDetector(
-          onTap: () => context.push('/article-detail', extra: article),
+          onTap: () {
+            final userActivity = UserActivityService();
+            userActivity.trackArticleView('default_user', article.id, article.topics);
+            context.push('/article-detail', extra: article);
+          },
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(

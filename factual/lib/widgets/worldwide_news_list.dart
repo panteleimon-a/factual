@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/news_provider.dart';
+import '../services/user_activity_service.dart';
+import 'worldwide_news_item.dart';
 
 class WorldwideNewsList extends StatelessWidget {
   const WorldwideNewsList({super.key});
@@ -19,6 +21,11 @@ class WorldwideNewsList extends StatelessWidget {
         final articles = newsProvider.articles.skip(3).take(10).toList();
 
         if (articles.isEmpty) {
+          // If we have news in the carousel (total > 0) but none left for the list, just hide this section.
+          if (newsProvider.articles.isNotEmpty) {
+             return const SizedBox.shrink();
+          }
+
           return SizedBox(
             height: 200,
             child: Center(
@@ -37,87 +44,9 @@ class WorldwideNewsList extends StatelessWidget {
           itemCount: articles.length,
           itemBuilder: (context, index) {
             final article = articles[index];
-            return GestureDetector(
-              onTap: () => context.push('/article-detail', extra: article),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        color: Colors.grey[100],
-                        child: article.imageUrl != null
-                            ? Image.network(
-                                article.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => 
-                                  const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
-                              )
-                            : const Icon(Icons.article_outlined, color: Colors.grey),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            article.title,
-                            style: GoogleFonts.roboto(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            article.summary,
-                            style: GoogleFonts.roboto(
-                              fontSize: 14,
-                              color: Colors.black54,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                article.source.name.toUpperCase(),
-                                style: GoogleFonts.robotoCondensed(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const CircleAvatar(radius: 1.5, backgroundColor: Colors.black26),
-                              const SizedBox(width: 8),
-                              Text(
-                                _getTimeAgo(article.publishedAt),
-                                style: GoogleFonts.roboto(
-                                  fontSize: 12,
-                                  color: Colors.black38,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: WorldwideNewsItem(article: article),
             );
           },
         );

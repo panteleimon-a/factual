@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; // Add Provider
 import '../models/news_article.dart';
+import '../providers/news_provider.dart'; // Add NewsProvider
 import 'package:go_router/go_router.dart';
+import '../services/user_activity_service.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
-class DeepAnalysisCard extends StatelessWidget {
+class DeepAnalysisCard extends StatefulWidget {
   final NewsArticle article;
   final Map<String, dynamic>? contextData;
 
@@ -14,9 +19,40 @@ class DeepAnalysisCard extends StatelessWidget {
   });
 
   @override
+  State<DeepAnalysisCard> createState() => _DeepAnalysisCardState();
+}
+
+class _DeepAnalysisCardState extends State<DeepAnalysisCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Lazy load context if missing
+    if (widget.contextData == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<NewsProvider>(context, listen: false).analyzeArticle(widget.article.id);
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(DeepAnalysisCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If article changed or context was null and is still null, re-trigger
+    if (widget.article.id != oldWidget.article.id && widget.contextData == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<NewsProvider>(context, listen: false).analyzeArticle(widget.article.id);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/article-detail', extra: article),
+      onTap: () {
+        final userActivity = UserActivityService();
+        userActivity.trackArticleView('default_user', widget.article.id, widget.article.topics);
+        context.push('/article-detail', extra: widget.article);
+      },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -41,7 +77,7 @@ class DeepAnalysisCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                    Text(
-                    article.source.name.toUpperCase(),
+                    widget.article.source.name.toUpperCase(),
                     style: GoogleFonts.robotoCondensed(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -51,7 +87,7 @@ class DeepAnalysisCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    article.title,
+                    widget.article.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.roboto(
@@ -64,7 +100,7 @@ class DeepAnalysisCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   // Utility 2: AI Abstract
                   Text(
-                    contextData?['abstract'] ?? article.summary,
+                    widget.contextData?['abstract'] ?? widget.article.summary,
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.roboto(
@@ -81,16 +117,34 @@ class DeepAnalysisCard extends StatelessWidget {
             Expanded(
               flex: 2,
               child: SizedBox(
-                height: 140,
-                child: contextData == null 
-                  ? _buildGraphLoading()
-                  : _buildReproductionGraph(contextData!['graphData'] as List?),
+                height: 160,
+                child: _buildGraphContent(),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildGraphContent() {
+    // 1. Loading State
+    if (widget.contextData == null) {
+      return _buildGraphLoading();
+    }
+    
+    // 2. Failure/Empty State (contextData is not null but empty, or graphData missing)
+    if (widget.contextData!.isEmpty || widget.contextData!['graphData'] == null) {
+      return Center(
+        child: Text(
+          'Analysis Unavailable',
+          style: GoogleFonts.robotoCondensed(fontSize: 10, color: Colors.black26),
+        ),
+      );
+    }
+    
+    // 3. Success State
+    return _buildReproductionGraph(widget.contextData!['graphData'] as List?);
   }
 
   Widget _buildGraphLoading() {
@@ -117,54 +171,129 @@ class DeepAnalysisCard extends StatelessWidget {
   Widget _buildReproductionGraph(List? graphData) {
     if (graphData == null || graphData.isEmpty) return const SizedBox.shrink();
 
+    List<FlSpot> spots = [];
+    try {
+      // Parse data points
+      for (var item in graphData) {
+        if (item['datetime'] != null && item['velocity'] != null) {
+          final date = DateTime.parse(item['datetime'].toString());
+          final velocity = (item['velocity'] as num).toDouble();
+          spots.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), velocity));
+        }
+      }
+      
+      // Sort by time just in case
+      spots.sort((a, b) => a.x.compareTo(b.x));
+      
+      if (spots.isEmpty) return const SizedBox.shrink();
+      
+    } catch (e) {
+      print('Graph data parsing error: $e');
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'REPRODUCTION',
-          style: GoogleFonts.robotoCondensed(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            color: Colors.black26,
-            letterSpacing: 1.0,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'SPREAD VELOCITY',
+            style: GoogleFonts.robotoCondensed(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: Colors.black26,
+              letterSpacing: 1.0,
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: graphData.map((data) {
-              final double volume = (data['volume'] as num).toDouble();
-              final double heightFactor = (volume / 20).clamp(0.1, 1.0);
-              
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 80 * heightFactor,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
+        SizedBox(
+          height: 100,
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  color: Colors.black87,
+                  barWidth: 2,
+                  isStrokeCapRound: true,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.1),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    data['time'].toString(),
-                    style: GoogleFonts.robotoCondensed(fontSize: 8, color: Colors.black38),
-                  ),
-                ],
-              );
-            }).toList(),
+                ),
+              ],
+              minY: 0,
+              maxY: 100, // Velocity is 0-100
+              lineTouchData: LineTouchData(
+                enabled: false, // Minimal, no interaction for now
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Total Spread: ${graphData.last['volume']} sources',
-          style: GoogleFonts.roboto(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.black45),
+
+        // Time Labels: Start - Peak (if significant) - Today
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDate(spots.first.x),
+                style: GoogleFonts.robotoCondensed(fontSize: 8, color: Colors.black38),
+              ),
+              if (_getPeakSpot(spots) != null)
+                Column(
+                  children: [
+                    Text(
+                      'PEAK',
+                      style: GoogleFonts.robotoCondensed(fontSize: 6, color: Colors.black26, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _formatDate(_getPeakSpot(spots)!.x),
+                      style: GoogleFonts.robotoCondensed(fontSize: 8, color: Colors.black, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              Text(
+                'TODAY',
+                style: GoogleFonts.robotoCondensed(fontSize: 8, color: Colors.black38),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
+
+  FlSpot? _getPeakSpot(List<FlSpot> spots) {
+    if (spots.isEmpty) return null;
+    FlSpot peak = spots.first;
+    for (var spot in spots) {
+      if (spot.y > peak.y) peak = spot;
+    }
+    // Only show peak if it's not the start or end (approx) to avoid overlap
+    if (peak == spots.first || peak == spots.last) return null;
+    return peak;
+  }
+
+  String _formatDate(double ms) {
+    final date = DateTime.fromMillisecondsSinceEpoch(ms.toInt());
+    return DateFormat('MMM d').format(date).toUpperCase();
+  }
 }
+
+
+

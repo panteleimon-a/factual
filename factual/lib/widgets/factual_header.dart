@@ -3,14 +3,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 class factualHeader extends StatelessWidget implements PreferredSizeWidget {
-  const factualHeader({super.key});
+  final bool isHistoryPage;
+  final VoidCallback? onHistoryTap;
+
+  const factualHeader({
+    super.key, 
+    this.isHistoryPage = false,
+    this.onHistoryTap,
+  });
 
   @override
-  Size get preferredSize => const Size.fromHeight(80); // Increased height
+  Size get preferredSize => const Size.fromHeight(80);
 
   @override
   Widget build(BuildContext context) {
-    // Responsive sizing logic
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallPhone = screenWidth < 360;
 
@@ -31,48 +37,65 @@ class factualHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left Group: History
+              // Left Group: History (Show only on Main, or Back on History)
               SizedBox(
-                width: 48,
-                child: IconButton(
-                  icon: const Icon(Icons.access_time_rounded, color: Colors.black, size: 26),
-                  onPressed: () => context.push('/history'),
-                  padding: EdgeInsets.zero,
-                ),
+                width: 70, // Wider for text
+                child: isHistoryPage 
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: onHistoryTap ?? () => context.pop(),
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.history_rounded, size: 28, color: Colors.black),
+                      onPressed: onHistoryTap ?? () => context.push('/history'),
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                    ),
               ),
               
               const Spacer(),
               
-              // Center Group: Branding
+              // Center Group: Branding or Home Button
               Flexible(
                 flex: 4,
-                child: GestureDetector(
-                  onTap: () => context.go('/'),
-                  child: Text(
-                    'factual',
-                    style: GoogleFonts.robotoCondensed(
-                      fontSize: isSmallPhone ? 28 : 34,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      letterSpacing: -0.5,
+                child: isHistoryPage
+                  ? IconButton(
+                      icon: const Icon(Icons.home_filled, size: 32, color: Colors.black),
+                      onPressed: onHistoryTap ?? () => context.go('/'),
+                    )
+                  : GestureDetector(
+                      onTap: () => context.go('/'),
+                      child: Text(
+                        'factual',
+                        style: GoogleFonts.robotoCondensed(
+                          fontSize: isSmallPhone ? 28 : 34,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
               ),
               
               const Spacer(),
               
               // Right Group: Icons
               SizedBox(
-                width: 80, // Space for two icons
+                width: 92,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Icon(Icons.notifications_none_rounded, color: Colors.black, size: 26),
-                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none_rounded, color: Colors.black, size: 26),
+                      onPressed: () => context.push('/notifications'),
+                      padding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => context.push('/profile'),
                       child: Container(

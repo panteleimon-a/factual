@@ -7,6 +7,9 @@ class SearchQuery {
   final String? location; // Geographic context of search
   final List<String> relatedArticleIds; // Articles found for this query
   final Map<String, dynamic> metadata; // Additional query context
+  final bool isPinned;
+  final bool isSynced;
+  final String? resultJson; // Cached LLM analysis result
 
   SearchQuery({
     required this.id,
@@ -17,6 +20,9 @@ class SearchQuery {
     this.location,
     this.relatedArticleIds = const [],
     this.metadata = const {},
+    this.isPinned = false,
+    this.isSynced = false,
+    this.resultJson,
   });
 
   // Create SearchQuery from JSON
@@ -33,6 +39,9 @@ class SearchQuery {
           ? List<String>.from(json['relatedArticleIds'])
           : [],
       metadata: json['metadata'] ?? {},
+      isPinned: json['isPinned'] == 1 || json['isPinned'] == true,
+      isSynced: json['isSynced'] == 1 || json['isSynced'] == true,
+      resultJson: json['resultJson'],
     );
   }
 
@@ -47,6 +56,9 @@ class SearchQuery {
       'location': location,
       'relatedArticleIds': relatedArticleIds,
       'metadata': metadata,
+      'isPinned': isPinned ? 1 : 0,
+      'isSynced': isSynced ? 1 : 0,
+      'resultJson': resultJson,
     };
   }
 
@@ -60,6 +72,9 @@ class SearchQuery {
     String? location,
     List<String>? relatedArticleIds,
     Map<String, dynamic>? metadata,
+    bool? isPinned,
+    bool? isSynced,
+    String? resultJson,
   }) {
     return SearchQuery(
       id: id ?? this.id,
@@ -70,6 +85,9 @@ class SearchQuery {
       location: location ?? this.location,
       relatedArticleIds: relatedArticleIds ?? this.relatedArticleIds,
       metadata: metadata ?? this.metadata,
+      isPinned: isPinned ?? this.isPinned,
+      isSynced: isSynced ?? this.isSynced,
+      resultJson: resultJson ?? this.resultJson,
     );
   }
 

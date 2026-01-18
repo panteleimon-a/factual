@@ -71,7 +71,7 @@ class _MapScreenState extends State<MapScreen> {
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
-                style: _mapStyle, 
+                // style: _mapStyle, 
               ),
 
               // Controls Overlay

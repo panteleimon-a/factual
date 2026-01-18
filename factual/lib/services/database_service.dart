@@ -22,7 +22,7 @@ class DatabaseService {
     String path = join(await getDatabasesPath(), 'factual.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -54,6 +54,9 @@ class DatabaseService {
         location TEXT,
         relatedArticleIds TEXT,
         metadata TEXT,
+        isPinned INTEGER DEFAULT 0,
+        isSynced INTEGER DEFAULT 0,
+        resultJson TEXT,
         FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
       )
     ''');
@@ -127,6 +130,7 @@ class DatabaseService {
         articleId TEXT NOT NULL,
         topics TEXT,
         timestamp TEXT NOT NULL,
+        isSynced INTEGER DEFAULT 0,
         FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
       )
     ''');
@@ -152,7 +156,65 @@ class DatabaseService {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database migrations here if needed
+    print('DatabaseService: Upgrading from $oldVersion to $newVersion');
+    if (oldVersion < 2) {
+      // Version 2 changes
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS location_history(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId TEXT NOT NULL,
+          latitude REAL NOT NULL,
+          longitude REAL NOT NULL,
+          countryCode TEXT,
+          timestamp TEXT NOT NULL,
+          FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+        )
+      ''');
+    }
+    if (oldVersion < 4) {
+      try {
+        await db.execute('ALTER TABLE search_queries ADD COLUMN isPinned INTEGER DEFAULT 0');
+      } catch (e) {
+        print('DatabaseService: column isPinned already exists');
+      }
+    }
+    if (oldVersion < 5) {
+      // 1. Create user_interactions if missing
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS user_interactions(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId TEXT NOT NULL,
+          articleId TEXT NOT NULL,
+          topics TEXT,
+          timestamp TEXT NOT NULL,
+          isSynced INTEGER DEFAULT 0,
+          FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+        )
+      ''');
+      
+      // 2. Add isSynced to search_queries
+      try {
+        await db.execute('ALTER TABLE search_queries ADD COLUMN isSynced INTEGER DEFAULT 0');
+      } catch (e) {
+        print('DatabaseService: column isSynced already exists in search_queries');
+      }
+
+      // 3. Add isSynced to user_interactions (in case it existed without it)
+      try {
+        await db.execute('ALTER TABLE user_interactions ADD COLUMN isSynced INTEGER DEFAULT 0');
+      } catch (e) {
+        print('DatabaseService: column isSynced already exists in user_interactions');
+      }
+
+      // 4. Add resultJson to search_queries
+      try {
+        await db.execute('ALTER TABLE search_queries ADD COLUMN resultJson TEXT');
+      } catch (e) {
+        print('DatabaseService: column resultJson already exists');
+      }
+    }
   }
 
   // ==================== USER OPERATIONS ====================
@@ -260,6 +322,16 @@ class DatabaseService {
       'search_queries',
       where: 'userId = ?',
       whereArgs: [userId],
+    );
+  }
+
+  Future<int> togglePinQuery(String queryId, bool isPinned) async {
+    final db = await database;
+    return await db.update(
+      'search_queries',
+      {'isPinned': isPinned ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [queryId],
     );
   }
 
@@ -601,6 +673,9 @@ class DatabaseService {
       'location': query.location,
       'relatedArticleIds': query.relatedArticleIds.join(','),
       'metadata': query.metadata.toString(),
+      'isPinned': query.isPinned ? 1 : 0,
+      'isSynced': query.isSynced ? 1 : 0,
+      'resultJson': query.resultJson,
     };
   }
 
@@ -616,6 +691,9 @@ class DatabaseService {
           ? (map['relatedArticleIds'] as String).split(',')
           : [],
       metadata: {},
+      isPinned: map['isPinned'] == 1,
+      isSynced: map['isSynced'] == 1,
+      resultJson: map['resultJson'],
     );
   }
 

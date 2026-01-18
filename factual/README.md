@@ -1,16 +1,97 @@
-# factual
+<p align="center">
+  <img src="factual logo.png" alt="Factual Logo" width="200"/>
+</p>
 
-A new Flutter project.
+# Παρουσίαση εφαρμογής factual
 
-## Getting Started
+## 1. Εγκατάσταση και Χρήση (Installation)
 
-This project is a starting point for a Flutter application.
+### Απαιτήσεις Συστήματος
+*   **Android Version**: Android 8.0 (Oreo) ή νεότερο.
+*   **Απαιτούμενα Services**: Google Play Services (για χάρτες και τοποθεσία).
+*   **Σύνδεση**: Απαιτείται ενεργή σύνδεση στο διαδίκτυο.
 
-A few resources to get you started if this is your first Flutter project:
+### Οδηγίες Εγκατάστασης
+1.  Κατεβάστε το αρχείο `app-release.apk`.
+2.  Μεταφέρετε το αρχείο στη συσκευή σας Android.
+3.  Ανοίξτε το αρχείο για να ξεκινήσει η εγκατάσταση.
+    *   *Σημείωση: Αν ζητηθεί, ενεργοποιήστε την "Εγκατάσταση από άγνωστες πηγές" στις ρυθμίσεις της συσκευής.*
+4.  Μόλις ολοκληρωθεί, ανοίξτε την εφαρμογή "factual".
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Χρήση
+*   **Είσοδος**: Μπορείτε να συνδεθείτε ως Επισκέπτης (Continue as Guest) για άμεση πρόσβαση.
+*   **Αρχική Οθόνη**: Δείτε τα κορυφαία νέα και την προσωποποιημένη ροή σας.
+*   **Αναζήτηση**: Χρησιμοποιήστε τη μπάρα αναζήτησης ή το μικρόφωνο για να ρωτήσετε οτιδήποτε.
+*   **Ιστορικό/Ρυθμίσεις**: Προσβάσιμα από το μενού στην κορυφή.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 2. Figma Design
+
+Τα περισσότερα wireframes εφαρμόστηκαν. Κάποια έχουν πιλοτική χρήση, ενώ κάποια άλλα έχουν πλήρως λειτουργικά features (history, news search, LLM prompting). 
+
+*   **Authentication**: Λειτουργεί με "Continue as Guest" ή με Firebase account (authorized).
+*   **UI/UX**: Υπάρχει μία μικρή διαφορά στο wireframe της ανάλυσης νέων. Επειδή υπήρχε overflow στο design, το landing page για την ανάλυση δεν περιέχει το history left sidebar. Σε κάποιες περιπτώσεις (resize) μπορεί να εμφανιστεί overflow, το οποίο διορθώνεται με restart ή σε επόμενα updates.
+
+---
+
+## 3. Αλγόριθμος Προσαρμοστικής Ροής (Adaptive Feed)
+
+Η Προσαρμοστική Ροή (Adaptive Feed) αποτελεί τον κεντρικό μηχανισμό εξατομίκευσης της εφαρμογής factual. Προτείνει δυναμικά άρθρα με βάση το Ιστορικό, την Τοποθεσία και AI.
+
+### 1. Εναύσματα Ανανέωσης (Refresh Triggers)
+*   **Αρχικοποίηση**: Ενεργοποιείται άμεσα (`_loadData()`).
+*   **Χειροκίνητα**: Pull-to-refresh.
+*   **Ρητή Εναλλαγή**: Επιλογή "Personalized Feed" στις ρυθμίσεις.
+
+### 2. Είσοδοι & Πηγές Δεδομένων
+
+#### Α. Σήματα Χρήστη
+| Σήμα | Περιγραφή | Πηγή |
+| :--- | :--- | :--- |
+| **Ιστορικό Ανάγνωσης** | Άρθρα που έχει ανοίξει ο χρήστης | Firestore / Local SQLite |
+| **Ιστορικό Αναζήτησης** | Ερωτήματα χρήστη | Firestore / Local SQLite |
+| **Τοποθεσία** | Κωδικός χώρας (π.χ. 'gr') | Συσκευή |
+| **Βαθμολογίες** | Χάρτης συχνότητας θεμάτων | Firestore / Local SQLite |
+
+#### Β. Εξωτερικά Endpoints
+*   **News API (NewsData.io)**: Λήψη ακατέργαστων δεδομένων.
+*   **Google Gemini (GenAI)**: `gemini-2.0-flash` για ανάλυση πλαισίου.
+*   **Firebase Firestore**: Συγχρονισμός προφίλ.
+
+---
+
+### 3. Ο Αλγόριθμος (Βήμα προς Βήμα)
+
+1.  **Ανάκτηση Προφίλ**: Το `UserActivityService` ανακτά τα top interests από Firestore ή SQLite.
+2.  **Δημιουργία Παραμέτρων (AI Agent)**: Το Gemini παράγει 3 ερωτήματα:
+    *   *Direct Mix* (Άμεση Μίξη)
+    *   *Tangential* (Εφαπτομενικά)
+    *   *Discovery* (Ανακάλυψη)
+3.  **Λήψη Περιεχομένου**: 3 παράλληλες κλήσεις στο News API.
+4.  **Συγχώνευση & Καθαρισμός**: Αφαίρεση διπλότυπων.
+5.  **Εμπλουτισμός (Post-Load)**: Background analysis (`loadGlobalContexts`) για Spread Velocity & Summary.
+
+---
+
+### 4. Διάγραμμα Ροής
+
+```mermaid
+graph TD
+    A[User Opens App] --> B[_loadData]
+    B --> C[Load Worldwide Headlines]
+    B --> D{Has User Profile?}
+    D -- Yes --> E[Gemini: Generate 3 Search Strategies]
+    E --> F[News API: Fetch Articles]
+    F --> G[Update UI with Personalized Feed]
+    D -- No --> H[Load General Headlines]
+```
+
+## 4. API Keys & Configuration (Για τον καθηγητή)
+
+Η εφαρμογή περιλαμβάνει ενσωματωμένα API Keys για λόγους επίδειξης (Demo/Review mode).
+*   **Google Gemini API Key**: Βρίσκεται στο `lib/constants.dart`.
+*   **NewsData.io API Key**: Βρίσκεται στο `lib/services/news_service.dart`.
+*   **Firebase**: Το αρχείο `google-services.json` είναι ενσωματωμένο.
+
+Δεν απαιτείται καμία ενέργεια από πλευράς σας για την ενεργοποίηση των κλειδιών.

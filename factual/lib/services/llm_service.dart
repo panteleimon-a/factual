@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/news_article.dart';
 import '../config/api_config.dart';
@@ -206,16 +207,27 @@ Respond with JSON only:
 
     try {
       final prompt = '''
-Analyze this search query and provide helpful suggestions.
+--- SR EDITORIAL PROTOCOL: UTILITY B ---
+Perform a rigorous fact-check on this user query.
 
 Query: "$query"
 
+INSTRUCTIONS:
+1. Search Phase: Retrieve information primarily from Tier 1 (Official Data) and Tier 2 (Public Service like Reuters, BBC, SR) sources.
+2. Synthesis: 
+   - If sources agree: State as fact.
+   - If sources disagree: State the controversy (Source A vs Source B).
+   - If unverified: Explicitly state "No credible evidence found."
+3. Tone: Clinical, non-judgmental, precise.
+
 Respond with JSON only:
 {
-  "enhancedQuery": "improved search terms",
-  "intent": "what the user is looking for",
-  "suggestedTopics": ["topic1", "topic2"],
-  "sentiment": "positive|negative|neutral"
+  "answer": "Direct, verified answer...",
+  "certainty": "High|Medium|Low",
+  "sources": ["Source 1", "Source 2"],
+  "controversy": "None|Details of disagreement",
+  "verdict": "Verified|Disputed|Debunked|Unverified",
+  "suggestedTopics": ["Related Topic 1", "Related Topic 2"]
 }
 ''';
 
@@ -223,13 +235,21 @@ Respond with JSON only:
       final response = await _model.generateContent(content);
 
       if (response.text == null) {
+        debugPrint('❌ LLMService.processQuery: Empty response from Gemini API');
         throw LLMServiceException('Empty response from Gemini API');
       }
 
+      debugPrint('✅ LLMService.processQuery: Raw Gemini response: ${response.text}');
+      
       String jsonStr = response.text!.trim();
       jsonStr = jsonStr.replaceAll('```json', '').replaceAll('```', '').trim();
       
-      return _parseJson(jsonStr);
+      debugPrint('🔧 LLMService.processQuery: Cleaned JSON string: $jsonStr');
+      
+      final result = _parseJson(jsonStr);
+      debugPrint('📊 LLMService.processQuery: Parsed result: $result');
+      
+      return result;
     } catch (e) {
       throw LLMServiceException('Query processing failed: $e');
     }
@@ -410,60 +430,13 @@ Respond with JSON only:
 
   Map<String, dynamic> _parseJson(String jsonStr) {
     try {
-      // Remove any potential BOM or whitespace
-      jsonStr = jsonStr.trim();
-      
-      // Basic JSON parsing
-      // In production, use dart:convert properly
-      if (jsonStr.startsWith('{') && jsonStr.endsWith('}')) {
-        // Simple regex-based parsing for demo
-        // Replace with proper JSON parser in production
-        final Map<String, dynamic> result = {};
-        
-        // Extract key-value pairs
-        final kvPattern = RegExp(r'"(\w+)"\s*:\s*([^,}\]]+|\[[^\]]+\])');
-        final matches = kvPattern.allMatches(jsonStr);
-        
-        for (var match in matches) {
-          final key = match.group(1)!;
-          var value = match.group(2)!.trim();
-          
-          // Remove quotes if string
-          if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.substring(1, value.length - 1);
-          }
-          
-          // Parse booleans
-          if (value == 'true') {
-            result[key] = true;
-          } else if (value == 'false') {
-            result[key] = false;
-          }
-          // Parse numbers
-          else if (RegExp(r'^-?\d+\.?\d*$').hasMatch(value)) {
-            result[key] = double.tryParse(value) ?? value;
-          }
-          // Parse arrays
-          else if (value.startsWith('[')) {
-            final items = value
-                .substring(1, value.length - 1)
-                .split(',')
-                .map((s) => s.trim().replaceAll('"', ''))
-                .toList();
-            result[key] = items;
-          }
-          // Keep as string
-          else {
-            result[key] = value;
-          }
-        }
-        
-        return result;
-      }
-      
-      return {};
+      // Remove markdown code blocks if present
+      final cleaned = jsonStr.replaceAll('```json', '').replaceAll('```', '').trim();
+      return json.decode(cleaned) as Map<String, dynamic>;
     } catch (e) {
-      throw LLMServiceException('Failed to parse JSON response: $e');
+      print('LLMService: JSON parse error: $e');
+      print('LLMService: Raw string: $jsonStr');
+      return {};
     }
   }
 
@@ -495,16 +468,23 @@ Title: ${article.title}
 Source: ${article.source.name}
 
 1. Create a <100 word abstract using neutral, clinical language. Focus on the hard news event.
-2. Generate reproduction graph data (Life cycle). 
-Identify at least 4 key points in time (e.g., 0h, 2h, 6h, 12h) and the volume/spread at each.
+2. Generate reproduction graph data (Timeline of spread velocity).
+   Provide a JSON array of data points representing the estimated spread velocity or interest level over time.
+   - Range: From the **First Reproduction Date/Time** (0 value) to **Today/Now**.
+   - Granularity: Provide 8-12 data points to form a smooth curve.
+   - Data format:
+     - "datetime": ISO 8601 string (e.g., "2023-10-27T10:00:00Z").
+     - "velocity": Integer 0-100 (estimated spread intensity).
+   - **IMPORTANT**: The array MUST be sorted chronologically.
 
 Respond ONLY with JSON:
 {
   "abstract": "...",
   "graphData": [
-    {"time": "0h", "volume": 1, "source": "..."},
-    {"time": "2h", "volume": 15, "source": "Reuters/AP"},
-    ...
+    {"datetime": "2023-10-27T08:00:00Z", "velocity": 0},
+    {"datetime": "2023-10-27T12:00:00Z", "velocity": 45},
+    {"datetime": "2023-10-28T09:00:00Z", "velocity": 90},
+    {"datetime": "2023-11-02T15:30:00Z", "velocity": 20}
   ]
 }
 ''';
@@ -514,8 +494,21 @@ Respond ONLY with JSON:
       final text = response.text;
       if (text == null) return {};
       
-      final cleaned = text.replaceAll('```json', '').replaceAll('```', '').trim();
-      return json.decode(cleaned);
+      // key: Robust JSON extraction
+      final jsonRegExp = RegExp(r'\{.*\}', dotAll: true);
+      final match = jsonRegExp.firstMatch(text);
+      
+      if (match != null) {
+        final jsonStr = match.group(0)!;
+        return json.decode(jsonStr);
+      } else {
+        // Fallback or just try cleaning code blocks if regex fails
+        final cleaned = text.replaceAll('```json', '').replaceAll('```', '').trim();
+        if (cleaned.startsWith('{')) {
+             return json.decode(cleaned);
+        }
+        throw FormatException('No JSON found in response');
+      }
     } catch (e) {
       print('Global context generation failed: $e');
       return {};
@@ -534,6 +527,8 @@ Identify:
 2. Key secondary reports (agencies, major outlets).
 3. Propagation timeline (Estimated).
 4. Major changes in framing/bias across outlets.
+
+**IMPORTANT**: The list MUST be sorted chronologically from oldest (Index 0) to newest.
 
 Respond ONLY with a JSON list of steps:
 [
@@ -554,6 +549,53 @@ Respond ONLY with a JSON list of steps:
     } catch (e) {
       print('Reproduction graph failed: $e');
       return [];
+    }
+  }
+
+  // ==================== ADAPTIVE FEED GENERATION ====================
+
+  /// Generate search queries for a personalized feed based on user interests
+  Future<List<String>> generateAdaptiveFeedParams(List<String> interests, {String? location}) async {
+    if (!_isInitialized) {
+      throw LLMServiceException('LLM Service not initialized');
+    }
+
+    if (interests.isEmpty) {
+      return ['Technology', 'World News', 'Science'];
+    }
+
+    // Join top 5 interests
+    final topics = interests.take(5).join(', ');
+
+    final locationContext = location != null ? " and current location ($location)" : "";
+
+    final prompt = '''
+You are an AI news curator. The user is interested in: $topics$locationContext.
+
+Generate 3 diverse, specific search queries to creating an interesting news feed for them.
+- Query 1: A direct mix of their top interests and location.
+- Query 2: A trending tangential topic related to their interests$locationContext.
+- Query 3: A "discovery" topic that is new but relevant to their taste and location.
+
+Respond ONLY with a JSON list of strings:
+["Query 1", "Query 2", "Query 3"]
+''' ;
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model.generateContent(content);
+      
+      if (response.text == null) return interests.take(3).toList();
+
+      String jsonStr = response.text!.trim();
+      jsonStr = jsonStr.replaceAll('```json', '').replaceAll('```', '').trim();
+      
+      final List<dynamic> list = json.decode(jsonStr);
+      return list.cast<String>();
+    } catch (e) {
+      print('Adaptive feed generation failed: $e');
+      // Fallback to raw interests
+      return interests.take(3).toList();
     }
   }
 }

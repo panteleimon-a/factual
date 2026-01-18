@@ -6,7 +6,7 @@ import '../screens/article_detail_screen.dart';
 import '../screens/news_detail_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/profile_screen.dart';
-import '../screens/search_history_screen.dart';
+import '../screens/chat_hub_screen.dart';
 import '../screens/settings_screen.dart';
 import '../models/news_article.dart';
 
@@ -17,8 +17,12 @@ import '../screens/sign_up_screen.dart';
 import '../screens/forgot_password_screen.dart';
 import '../screens/regional_news_detail_screen.dart';
 import '../screens/worldwide_deep_analysis_screen.dart';
-import '../screens/query_analysis_screen.dart';
 import '../screens/debug_analytics_screen.dart';
+import '../screens/notifications_screen.dart';
+import '../screens/notification_settings_screen.dart';
+import '../screens/blocked_users_screen.dart';
+import '../screens/language_screen.dart';
+import '../screens/clear_data_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/loading',
@@ -41,7 +45,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/history',
-      builder: (context, state) => const SearchHistoryScreen(),
+      builder: (context, state) => const ChatHubScreen(),
     ),
     GoRoute(
       path: '/regional-news',
@@ -73,6 +77,13 @@ final router = GoRouter(
       },
     ),
     GoRoute(
+      path: '/news-detail',
+      builder: (context, state) {
+        final article = state.extra as NewsArticle;
+        return NewsDetailScreen(articleId: article.id);
+      },
+    ),
+    GoRoute(
       path: '/map',
       builder: (context, state) => const MapScreen(),
     ),
@@ -92,12 +103,32 @@ final router = GoRouter(
       path: '/query-analysis',
       builder: (context, state) {
         final query = state.extra as String;
-        return QueryAnalysisScreen(query: query);
+        return ChatHubScreen(initialQuery: query);
       },
     ),
     GoRoute(
       path: '/debug-analytics',
       builder: (context, state) => const DebugAnalyticsScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/notification-settings',
+      builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/blocked-users',
+      builder: (context, state) => const BlockedUsersScreen(),
+    ),
+    GoRoute(
+      path: '/language',
+      builder: (context, state) => const LanguageScreen(),
+    ),
+    GoRoute(
+      path: '/clear-data',
+      builder: (context, state) => const ClearDataScreen(),
     ),
   ],
 );

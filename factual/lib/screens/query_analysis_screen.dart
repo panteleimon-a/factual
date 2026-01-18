@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../services/llm_service.dart';
 import '../widgets/factual_header.dart';
 
@@ -14,6 +15,7 @@ class QueryAnalysisScreen extends StatefulWidget {
 }
 
 class _QueryAnalysisScreenState extends State<QueryAnalysisScreen> {
+  Map<String, dynamic>? _result;
   String? _analysis;
   bool _isLoading = true;
 
@@ -30,6 +32,7 @@ class _QueryAnalysisScreenState extends State<QueryAnalysisScreen> {
       // Using Utility 1 for query analysis
       final result = await llm.processQuery(widget.query);
       setState(() {
+        _result = result;
         _analysis = result['enhancedQuery'] ?? 'No analysis available.';
         _isLoading = false;
       });
@@ -54,38 +57,83 @@ class _QueryAnalysisScreenState extends State<QueryAnalysisScreen> {
           // Main Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(40),
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 64),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Analyzed: ${widget.query}',
-                    style: GoogleFonts.roboto(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
+                    style: GoogleFonts.robotoCondensed(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
                       color: Colors.black,
                       letterSpacing: -0.5,
+                      height: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   if (_isLoading)
-                    const Center(child: CircularProgressIndicator(color: Colors.black))
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _analysis!,
-                          style: GoogleFonts.roboto(
-                            fontSize: 18,
-                            color: Colors.black87,
-                            height: 1.5,
+                    const Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Center(child: CircularProgressIndicator(color: Colors.black)),
+                    )
+                  else ...[
+                    if (_result != null && _result!['intent'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 32),
+                        child: Text(
+                          _result!['intent'].toString().toUpperCase(),
+                          style: GoogleFonts.robotoCondensed(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black26,
+                            letterSpacing: 2.0,
                           ),
                         ),
-                        const SizedBox(height: 40),
-                        // Add more sections as per the wireframe if available
-                      ],
+                      ),
+                    Text(
+                      _analysis!,
+                      style: GoogleFonts.roboto(
+                        fontSize: 20,
+                        color: Colors.black87,
+                        height: 1.6,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
+                    const SizedBox(height: 48),
+                    if (_result != null && _result!['suggestedTopics'] != null) ...[
+                      Text(
+                        'SUGGESTED EXPLORATION',
+                        style: GoogleFonts.robotoCondensed(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black26,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: (_result!['suggestedTopics'] as List).map((topic) {
+                          return ActionChip(
+                            label: Text(topic.toString()),
+                            labelStyle: GoogleFonts.roboto(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                            backgroundColor: const Color(0xFFF5F5F5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              side: const BorderSide(color: Color(0xFFEEEEEE)),
+                            ),
+                            onPressed: () => context.push('/search', extra: topic.toString()),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),

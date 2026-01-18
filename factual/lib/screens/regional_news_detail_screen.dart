@@ -21,10 +21,10 @@ class RegionalNewsDetailScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator(color: Colors.black));
             }
 
-            final regionalArticles = newsProvider.articles.where((a) => a.location != null || a.latitude != null).toList();
-            
-            // Fallback to top headlines if none marked as regional
-            final displayArticles = regionalArticles.isNotEmpty ? regionalArticles : newsProvider.articles;
+            // Use correctly loaded regional articles from provider
+            final displayArticles = newsProvider.regionalArticles.isNotEmpty 
+                ? newsProvider.regionalArticles 
+                : newsProvider.articles;
 
             if (displayArticles.isEmpty) {
               return Center(

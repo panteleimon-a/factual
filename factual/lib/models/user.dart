@@ -2,6 +2,7 @@ class User {
   final String id;
   final String username;
   final String email;
+  final String? profileImage; // User's profile image URL
   final List<String> searchHistory; // List of search query IDs
   final String? location; // User's current location
   final Map<String, dynamic> preferences; // User personalization settings
@@ -12,6 +13,7 @@ class User {
     required this.id,
     required this.username,
     required this.email,
+    this.profileImage,
     this.searchHistory = const [],
     this.location,
     this.preferences = const {},
@@ -25,6 +27,7 @@ class User {
       id: json['id'] ?? '',
       username: json['username'] ?? '',
       email: json['email'] ?? '',
+      profileImage: json['profileImage'],
       searchHistory: json['searchHistory'] != null
           ? List<String>.from(json['searchHistory'])
           : [],
@@ -43,6 +46,7 @@ class User {
       'id': id,
       'username': username,
       'email': email,
+      'profileImage': profileImage,
       'searchHistory': searchHistory,
       'location': location,
       'preferences': preferences,
@@ -56,6 +60,7 @@ class User {
     String? id,
     String? username,
     String? email,
+    String? profileImage,
     List<String>? searchHistory,
     String? location,
     Map<String, dynamic>? preferences,
@@ -66,6 +71,7 @@ class User {
       id: id ?? this.id,
       username: username ?? this.username,
       email: email ?? this.email,
+      profileImage: profileImage ?? this.profileImage,
       searchHistory: searchHistory ?? this.searchHistory,
       location: location ?? this.location,
       preferences: preferences ?? this.preferences,

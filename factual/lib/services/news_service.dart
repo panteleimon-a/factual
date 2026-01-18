@@ -17,7 +17,7 @@ class NewsService {
   // API keys from central config
   final String _newsApiKey = ApiConfig.newsApiKey;
   // Currently we use NewsAPI primary, NewsData as secondary (if key added to config)
-  final String _newsDataApiKey = 'YOUR_NEWSDATA_KEY_HERE'; 
+  final String _newsDataApiKey = ApiConfig.newsDataApiKey; 
 
   // API endpoints
   static const String _newsApiUrl = 'https://newsapi.org/v2';
@@ -34,11 +34,17 @@ class NewsService {
 
     try {
       // Fetch from NewsAPI
-      final newsApiArticles = await _fetchFromNewsAPI(
-        query: query,
-        category: category,
-        country: country,
-      );
+      List<NewsArticle> newsApiArticles = [];
+      if (!_newsApiKey.startsWith('pub_')) {
+        newsApiArticles = await _fetchFromNewsAPI(
+          query: query,
+          category: category,
+          country: country,
+        );
+        print('NewsService: Fetched ${newsApiArticles.length} from NewsAPI');
+      } else {
+        print('NewsService: Skipping NewsAPI (Key looks like NewsData key)');
+      }
       allArticles.addAll(newsApiArticles);
 
       // Fetch from NewsData.io
@@ -46,14 +52,18 @@ class NewsService {
         query: query,
         category: category,
         country: country,
+        limit: limit,  // Pass limit through to API
       );
+      print('NewsService: Fetched ${newsDataArticles.length} from NewsData');
       allArticles.addAll(newsDataArticles);
 
       // Remove duplicates
-      final uniqueArticles = await _removeDuplicates(allArticles);
+      final uniqueArticles = await _removeDuplicates(allArticles)
+          .timeout(const Duration(seconds: 10), onTimeout: () => allArticles);
 
       // Tag with sentiment
-      final taggedArticles = await _tagSentiment(uniqueArticles);
+      final taggedArticles = await _tagSentiment(uniqueArticles)
+          .timeout(const Duration(seconds: 10), onTimeout: () => uniqueArticles);
 
       // Cache to database
       await _cacheArticles(taggedArticles);
@@ -79,7 +89,7 @@ class NewsService {
         'apiKey': _newsApiKey,
         if (query != null) 'q': query,
         if (category != null && query == null) 'category': category,
-        if (country != null && query == null) 'country': country ?? 'us',
+        if (query == null) 'country': country ?? 'us',
         'pageSize': '50',
       };
 
@@ -106,30 +116,44 @@ class NewsService {
     String? query,
     String? category,
     String? country,
+    int limit = 3,  // Limit results to conserve API quota
   }) async {
     try {
       final params = <String, String>{
         'apikey': _newsDataApiKey,
         if (query != null) 'q': query,
-        if (category != null) 'category': category,
-        if (country != null) 'country': country ?? 'us',
+        if (category == 'general') 
+        'category': 'top'
+      else if (category != null)
+        'category': category,
+        'country': (country ?? 'us').toLowerCase(),
         'language': 'en',
+        'size': limit.toString(),  // Limit number of results
       };
 
       final uri = Uri.parse('$_newsDataUrl/news').replace(queryParameters: params);
       final response = await http.get(uri);
+      print('NewsService: Calling NewsData URI: $uri');
+      print('NewsService: NewsData Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (data['results'] == null) {
+          print('NewsService: NewsData results is null');
+          return [];
+        }
         final articles = (data['results'] as List)
             .map((article) => _normalizeNewsDataArticle(article))
             .where((article) => article != null)
             .cast<NewsArticle>()
             .toList();
+        print('NewsService: Successfully parsed ${articles.length} articles from NewsData');
         return articles;
+      } else {
+        print('NewsService: NewsData error body: ${response.body}');
       }
     } catch (e) {
-      print('NewsData error: $e');
+      print('NewsService: NewsData exception: $e');
     }
     return [];
   }
@@ -300,8 +324,9 @@ class NewsService {
   Future<List<NewsArticle>> getTopHeadlines({
     String category = 'general',
     String country = 'us',
+    int limit = 3,  // Reduced from default 50 to conserve API quota
   }) async {
-    return await fetchNews(category: category, country: country);
+    return await fetchNews(category: category, country: country, limit: limit);
   }
 
   /// Get cached articles (offline mode)

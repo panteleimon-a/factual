@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -57,7 +59,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     
     // Navigate after animation completes + extra beat
     Future.delayed(const Duration(milliseconds: 3200), () {
-      if (mounted) {
+      if (!mounted) return;
+
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      if (userProvider.isLoggedIn) {
+        context.go('/');
+      } else {
         context.go('/auth');
       }
     });

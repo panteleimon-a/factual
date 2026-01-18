@@ -1,9 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // DUMMY AUTH: Register anonymously regardless of input
+      await Provider.of<UserProvider>(context, listen: false).signInAnonymously();
+      // Optionally update username if provided (nice to have)
+      final username = _usernameController.text.trim();
+      if (username.isNotEmpty) {
+        // We could update profile here, but for now just login.
+      }
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGuestLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await Provider.of<UserProvider>(context, listen: false).signInAnonymously();
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Guest login failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +107,7 @@ class SignUpScreen extends StatelessWidget {
                 
                 // Username Field
                 TextField(
+                  controller: _usernameController,
                   decoration: InputDecoration(
                     hintText: 'Username',
                     hintStyle: GoogleFonts.urbanist(
@@ -74,6 +136,8 @@ class SignUpScreen extends StatelessWidget {
                 
                 // Email Field
                 TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
                     hintStyle: GoogleFonts.urbanist(
@@ -102,6 +166,7 @@ class SignUpScreen extends StatelessWidget {
                 
                 // Password Field
                 TextField(
+                  controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Password',
@@ -131,6 +196,7 @@ class SignUpScreen extends StatelessWidget {
                 
                 // Confirm Password Field
                 TextField(
+                  controller: _confirmPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Confirm password',
@@ -163,10 +229,7 @@ class SignUpScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to home after registration
-                      context.go('/');
-                    },
+                    onPressed: _isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
@@ -175,11 +238,42 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
+                    child: _isLoading
+                      ? const SizedBox(
+                          height: 20, 
+                          width: 20, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        )
+                      : Text(
+                          'Agree and Register',
+                          style: GoogleFonts.urbanist(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Guest Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _handleGuestLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
                     child: Text(
-                      'Agree and Register',
+                      'Continue as Guest',
                       style: GoogleFonts.urbanist(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -212,11 +306,11 @@ class SignUpScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildSocialButton(Icons.facebook, const Color(0xFF1877F2)),
+                    _buildSocialButton(Icons.facebook, const Color(0xFF1877F2), _handleGuestLogin),
                     const SizedBox(width: 12),
-                    _buildSocialButton(Icons.g_mobiledata, const Color(0xFFDB4437)),
+                    _buildSocialButton(Icons.g_mobiledata, const Color(0xFFDB4437), _handleGuestLogin),
                     const SizedBox(width: 12),
-                    _buildSocialButton(Icons.apple, Colors.black),
+                    _buildSocialButton(Icons.apple, Colors.black, _handleGuestLogin),
                   ],
                 ),
                 
@@ -229,15 +323,19 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialButton(IconData icon, Color color) {
-    return Container(
-      width: 88,
-      height: 56,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildSocialButton(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 88,
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE8ECF4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 24),
       ),
-      child: Icon(icon, color: color, size: 24),
     );
   }
 }

@@ -3,12 +3,21 @@ import '../models/news_article.dart';
 import '../services/news_service.dart';
 import '../services/database_service.dart';
 import '../services/llm_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_activity_service.dart';
 
 class NewsProvider with ChangeNotifier {
   final NewsService _newsService;
 
-  NewsProvider(this._newsService);
+  NewsProvider(this._newsService) {
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _usePersonalizedFeed = prefs.getBool('use_personalized_feed') ?? false;
+    notifyListeners();
+  }
 
   // State
   List<NewsArticle> _articles = [];
@@ -64,6 +73,11 @@ class NewsProvider with ChangeNotifier {
         country: country ?? 'us',
         category: 'general',
       );
+      
+      // Filter out articles without images to improve carousel aesthetics
+      _regionalArticles = _regionalArticles
+          .where((a) => a.imageUrl != null && a.imageUrl!.isNotEmpty)
+          .toList();
     } catch (e) {
       print('Regional load error: $e');
       _regionalArticles = [];
@@ -82,14 +96,15 @@ class NewsProvider with ChangeNotifier {
 
     try {
       // Parallel execution: Fetch news + Perform Fact Check (if service provided)
-      final results = await Future.wait([
+      final List<Future<dynamic>> futures = [
         _newsService.searchNews(query, country: country, category: category),
         if (llmService != null) 
           llmService.performFactCheck(query)
             .catchError((e) => <String, dynamic>{'error': e.toString()})
         else 
-          Future.value(null)
-      ]);
+          Future<dynamic>.value(null)
+      ];
+      final results = await Future.wait(futures);
 
       _articles = results[0] as List<NewsArticle>;
       if (results.length > 1 && results[1] != null) {
@@ -170,10 +185,19 @@ class NewsProvider with ChangeNotifier {
       // Analyze up to 'count' articles (Utility C)
       final itemsToAnalyze = _articles.take(count).toList();
       for (var article in itemsToAnalyze) {
-        if (!_globalContexts.containsKey(article.id)) {
-          final contextData = await llmService.generateGlobalContext(article);
-          _globalContexts[article.id] = contextData;
-          notifyListeners();
+        // Skip if already has context to save LLM quota
+        if (!_globalContexts.containsKey(article.id) || _globalContexts[article.id] == null) {
+          try {
+            final contextData = await llmService.generateGlobalContext(article);
+            _globalContexts[article.id] = contextData;
+            notifyListeners();
+          } catch (e) {
+            print('Global context error for ${article.id}: $e');
+            // If we hit 429, stop the batch to prevent further errors
+            if (e.toString().contains('429') || e.toString().contains('quota')) {
+              break; 
+            }
+          }
         }
       }
     } catch (e) {
@@ -184,21 +208,27 @@ class NewsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> togglePersonalizedFeed(bool value, String userId) async {
+  Future<void> togglePersonalizedFeed(bool value, String userId, {String? location}) async {
     _usePersonalizedFeed = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('use_personalized_feed', value);
+    
     if (_usePersonalizedFeed) {
-      await loadPersonalizedNews(userId);
+      await loadPersonalizedNews(userId, location: location);
     } else {
       await loadTopHeadlines();
     }
   }
 
-  Future<void> loadPersonalizedNews(String userId) async {
+  Future<void> loadPersonalizedNews(String userId, {String? location}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final userActivityService = UserActivityService();
+      final llmService = LLMService(); // Get initialized instance
+      
+      // 1. Get User Interests (Local Fallback included)
       final topTopics = await userActivityService.getTopInterests(userId);
       
       if (topTopics.isEmpty) {
@@ -207,14 +237,24 @@ class NewsProvider with ChangeNotifier {
         return;
       }
 
-      // Merge results from top 3 topics
+      // 2. Generate Adaptive Feed Parameters (AI-Driven)
+      List<String> adaptiveQueries = [];
+      try {
+        adaptiveQueries = await llmService.generateAdaptiveFeedParams(topTopics, location: location);
+      } catch (e) {
+        print('Adaptive params failed, using raw topics: $e');
+        adaptiveQueries = topTopics.take(3).toList();
+      }
+
+      // 3. Fetch Personal Results (Merge top 3 adaptive queries)
       List<NewsArticle> personalResults = [];
-      for (var topic in topTopics.take(3)) {
-        final results = await _newsService.searchNews(topic);
+      for (var query in adaptiveQueries.take(3)) {
+        // Use 'searchNews' for each AI-generated query
+        final results = await _newsService.searchNews(query);
         personalResults.addAll(results);
       }
       
-      // Remove duplicates and notify
+      // 4. Remove duplicates and notify
       _articles = personalResults.toSet().toList();
       _error = null;
     } catch (e) {
@@ -226,29 +266,32 @@ class NewsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadSmartFeed(String userId) async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> loadSmartFeed(String userId, {String? location}) async {
+    // If user has explicitly enabled personalized feed, try to load it.
+    // Otherwise, load top headlines.
+    if (_usePersonalizedFeed) {
+      await loadPersonalizedNews(userId, location: location);
+    } else {
+      await loadTopHeadlines();
+    }
+  }
+
+  Future<void> analyzeArticle(String articleId) async {
+    final article = _articles.firstWhere(
+      (a) => a.id == articleId, 
+      orElse: () => _regionalArticles.firstWhere((a) => a.id == articleId),
+    );
+    
+    // Skip if already analyzed
+    if (_globalContexts.containsKey(articleId)) return;
 
     try {
-      final userActivityService = UserActivityService();
-      // Check if user has any interaction history
-      final topTopics = await userActivityService.getTopInterests(userId);
-      
-      if (topTopics.isNotEmpty) {
-        // User has history, load personalized
-        _usePersonalizedFeed = true;
-        await loadPersonalizedNews(userId);
-      } else {
-        // No history, load generic
-        _usePersonalizedFeed = false;
-        await loadTopHeadlines();
-      }
-    } catch (e) {
-      print('Smart feed error: $e');
-      _error = e.toString();
-      _isLoading = false;
+      final llmService = LLMService(); // Get initialized instance
+      final contextData = await llmService.generateGlobalContext(article);
+      _globalContexts[articleId] = contextData;
       notifyListeners();
+    } catch (e) {
+      print('Error analyzing article $articleId: $e');
     }
   }
 

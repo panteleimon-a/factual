@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import '../services/user_activity_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import '../models/user.dart';
 import '../models/search_query.dart';
 import '../models/news_article.dart';
@@ -8,9 +10,14 @@ import 'package:uuid/uuid.dart';
 
 /// Provider for user state and personalization
 class UserProvider extends ChangeNotifier {
+  UserProvider() {
+    initializeUser();
+  }
+
   final DatabaseService _db = DatabaseService();
   final LLMService _llm = LLMService();
   final Uuid _uuid = const Uuid();
+  final UserActivityService _activityService = UserActivityService();
 
   User? _currentUser;
   List<SearchQuery> _searchHistory = [];
@@ -28,40 +35,132 @@ class UserProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isLoggedIn => _currentUser != null;
 
+  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
+
   /// Initialize or load user
-  Future<void> initializeUser({String? userId}) async {
+  Future<void> initializeUser() async {
+    _isLoading = true;
+    notifyListeners();
+
+    // Listen to Firebase Auth state changes
+    _auth.authStateChanges().listen((auth.User? firebaseUser) async {
+      if (firebaseUser == null) {
+        _currentUser = null;
+        _isLoading = false;
+        notifyListeners();
+      } else {
+        print("User detected: ${firebaseUser.uid}");
+        // Map Firebase User to our local User model
+        await _syncUserFromFirebase(firebaseUser);
+        _isLoading = false;
+        notifyListeners();
+      }
+    });
+  }
+
+  /// Helper to sync Firebase user data with local database
+  Future<void> _syncUserFromFirebase(auth.User firebaseUser) async {
+    try {
+      var localUser = await _db.getUser(firebaseUser.uid);
+      
+      if (localUser == null) {
+        // New user or first time sync
+        localUser = User(
+          id: firebaseUser.uid,
+          username: firebaseUser.displayName ?? 'User${firebaseUser.uid.substring(0, 5)}',
+          email: firebaseUser.email ?? '',
+          createdAt: DateTime.now(), // In a real app, sync this from Firestore
+          lastActive: DateTime.now(),
+        );
+        await _db.insertUser(localUser);
+      }
+      
+      _currentUser = localUser;
+      
+      // Load user data
+      await _loadSearchHistory();
+      await _loadRecommendations();
+      await _loadTrendingTopics();
+      
+      // Sync pending activity to Firebase/Analytics
+      await _activityService.syncPendingActivity(firebaseUser.uid);
+    } catch (e) {
+      _error = 'Failed to sync user data: $e';
+      notifyListeners();
+    }
+  }
+
+  /// Sign Up with Email and Password
+  Future<void> signUp(String email, String password, String username) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    
+    try {
+      auth.UserCredential credential = await _auth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      
+      // Update display name
+      if (credential.user != null) {
+        await credential.user!.updateDisplayName(username);
+        // Force reload to get updated display name
+        await credential.user!.reload();
+      }
+      
+      // Initialization listener will handle the rest
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Sign In with Email and Password
+  Future<void> signIn(String email, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      if (userId != null) {
-        // Load existing user
-        _currentUser = await _db.getUser(userId);
-      }
-
-      if (_currentUser == null) {
-        // Create new user
-        _currentUser = User(
-          id: _uuid.v4(),
-          username: 'User${DateTime.now().millisecondsSinceEpoch}',
-          email: '',
-          createdAt: DateTime.now(),
-          lastActive: DateTime.now(),
-        );
-        await _db.insertUser(_currentUser!);
-      }
-
-      // Load user data
-      await _loadSearchHistory();
-      await _loadRecommendations();
-      await _loadTrendingTopics();
-
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      // Initialization listener will handle the rest
+    } catch (e) {
+      _error = 'Sign in failed: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Sign In Anonymously (Guest Mode for Beta Testing)
+  Future<void> signInAnonymously() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _auth.signInAnonymously();
+      // Initialization listener will handle the rest
     } catch (e) {
-      _error = 'Failed to initialize user: $e';
+      _error = 'Guest login failed: ${e.toString()}';
       _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Sign Out
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+      _currentUser = null;
+      _searchHistory = [];
+      notifyListeners();
+    } catch (e) {
+      _error = 'Sign out failed: $e';
       notifyListeners();
     }
   }
@@ -96,6 +195,21 @@ class UserProvider extends ChangeNotifier {
 
       // Update recommendations based on new search
       await _generateRecommendations();
+
+      // Track to Analytics/Firestore
+      // Note: syncPendingActivity will pick it up later if we don't call it here, 
+      // but trackSearchQuery logic in service is empty/placeholder.
+      // However, we should ensure the location is updated too.
+      if (location != null) {
+          // Extract lat/lng if possible or just log generic
+          // For now, we rely on the sync call which reads from SQLite.
+          // But we need to trigger a sync or write.
+          // The UserActivityService.syncPendingActivity scans SQLite.
+          // So we just need to call it.
+          await _activityService.syncPendingActivity(_currentUser!.id);
+      } else {
+         await _activityService.syncPendingActivity(_currentUser!.id);
+      }
 
       notifyListeners();
     } catch (e) {

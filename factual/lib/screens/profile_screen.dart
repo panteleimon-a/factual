@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../widgets/factual_header.dart';
 import '../services/database_service.dart';
+import '../providers/user_provider.dart';
+import '../models/user.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,7 +30,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final db = DatabaseService();
       // Using 'default_user' as placeholder until Auth is fully integrated
-      const userId = 'default_user';
+      // actually, userProvider should be used, but for stats we might need to wait for provider
+      const userId = 'default_user'; 
       
       final searches = await db.getSearchCount(userId);
       final reads = await db.getInteractionCount(userId);
@@ -51,6 +55,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.currentUser;
+
+    // Fallback display user
+    final displayUser = user ?? User(
+      id: 'guest',
+      username: 'Guest User', 
+      email: 'guest@factual.app',
+      createdAt: DateTime.now(),
+      lastActive: DateTime.now()
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const factualHeader(),
@@ -67,10 +83,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.grey[200],
-                  image: const DecorationImage(
-                    image: NetworkImage('https://i.pravatar.cc/300?u=factual_user'),
-                    fit: BoxFit.cover,
-                  ),
+                  image: displayUser.profileImage != null
+                      ? DecorationImage(
+                          image: NetworkImage(displayUser.profileImage!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.1),
@@ -79,99 +97,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
+                child: displayUser.profileImage == null
+                    ? Center(
+                        child: Text(
+                          displayUser.username.isNotEmpty ? displayUser.username[0].toUpperCase() : 'U',
+                          style: GoogleFonts.urbanist(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
+
               const SizedBox(height: 24),
-              
-              // Name & Email
+
+              // Username & Email
               Text(
-                'John Doe',
-                style: GoogleFonts.roboto(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                displayUser.username,
+                style: GoogleFonts.urbanist(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
               Text(
-                'john.doe@example.com',
-                style: GoogleFonts.roboto(
+                displayUser.email,
+                style: GoogleFonts.urbanist(
                   fontSize: 16,
-                  color: Colors.black45,
+                  color: Colors.grey[600],
                 ),
               ),
-              
-              const SizedBox(height: 48),
-              
-              // Premium Info Section (Personalized Insights)
-              _buildProfileItem(
-                context, 
-                'Stories Read', 
-                _isLoading ? '...' : '$_readCount articles', 
-                Icons.import_contacts_outlined
+
+              const SizedBox(height: 32),
+
+              // Statistics Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStatColumn('Articles', '$_readCount'),
+                  _buildStatColumn('Searches', '$_searchCount'),
+                  _buildStatColumn('Saved', '45'), // Placeholder
+                ],
               ),
-              _buildProfileItem(
-                context, 
-                'Search History', 
-                _isLoading ? '...' : '$_searchCount queries', 
-                Icons.history
-              ),
-              _buildProfileItem(
-                context, 
-                'Top Interest', 
-                _isLoading ? '...' : _topTopic ?? 'None', 
-                Icons.auto_graph_rounded
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Actions
+
+              const SizedBox(height: 32),
+
+              // Actions - Edit Profile
               SizedBox(
                 width: double.infinity,
-                height: 56,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => context.push('/settings'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 0,
                   ),
                   child: Text(
                     'Edit Profile',
-                    style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.urbanist(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
+              
               const SizedBox(height: 16),
-              
-              // Developer Analytics (Developer Only Feature)
-              TextButton.icon(
-                onPressed: () => context.push('/debug-analytics'),
-                icon: const Icon(Icons.developer_mode, size: 18),
-                label: Text(
-                  'Developer Analytics',
-                  style: GoogleFonts.roboto(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.black54,
-                ),
-              ),
-              
-              const SizedBox(height: 8),
 
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Sign Out',
-                  style: GoogleFonts.roboto(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.redAccent,
+               // Actions - Logout
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await userProvider.signOut();
+                    if (context.mounted) context.go('/auth');
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Log Out',
+                    style: GoogleFonts.urbanist(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
               ),
@@ -182,36 +199,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileItem(BuildContext context, String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.black54, size: 24),
-          const SizedBox(width: 16),
-          Text(
-            title,
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.urbanist(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              fontSize: 14,
-              color: Colors.black45,
-            ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.urbanist(
+            fontSize: 14,
+            color: Colors.grey[600],
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.chevron_right, color: Colors.black12, size: 20),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

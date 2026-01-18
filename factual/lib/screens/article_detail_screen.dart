@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 import '../models/news_article.dart';
+import '../models/search_query.dart';
 import '../widgets/factual_header.dart';
 import '../widgets/bias_gauge.dart';
 import '../services/llm_service.dart';
@@ -40,12 +42,24 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       // Using 'default_user' for now, in real app would be authenticated user ID
       await db.logArticleView('default_user', widget.article.id, widget.article.topics);
       
+      // Add article to search history so it appears in chat hub
+      final searchQuery = SearchQuery(
+        id: const Uuid().v4(),
+        userId: 'default_user',
+        query: widget.article.title,
+        sentiment: widget.article.sentiment,
+        timestamp: DateTime.now(),
+        relatedArticleIds: [widget.article.id],
+      );
+      await db.insertSearchQuery(searchQuery);
+      
       // Dual-Tracking: Firestore + Analytics (Personalization)
-      if (widget.article.topics.isNotEmpty) {
-        final userActivity = UserActivityService();
-        // Track the primary topic (first one) or all? Let's track the first one for simplicity first
-        await userActivity.trackArticleView('default_user', widget.article.topics.first);
-      }
+      final userActivity = UserActivityService();
+      await userActivity.trackArticleView(
+        'default_user', 
+        widget.article.id, 
+        widget.article.topics,
+      );
     } catch (e) {
       print('Interaction logging failed: $e');
     }
@@ -91,19 +105,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // "Analyzed:" Header
-                  Text(
-                    'Analyzed: ${widget.article.title}',
-                    style: GoogleFonts.roboto(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                      height: 1.2,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
                   // Title and Image Row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +263,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             const Icon(Icons.hub_outlined, size: 20, color: Colors.black54),
             const SizedBox(width: 12),
             Text(
-              'PROPAGATION LIFE CYCLE',
+              'SPREAD LIFECYCLE',
               style: GoogleFonts.robotoCondensed(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
