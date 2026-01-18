@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="factual logo.png" alt="Factual Logo" width="200"/>
+  <iframe src="https://drive.google.com/file/d/1nQ_fD6lYEyZlnYvvaXBqZmC4vIzKmQaj/preview" width="640" height="480"></iframe>
 </p>
 
 # Παρουσίαση εφαρμογής factual
@@ -87,7 +87,42 @@ graph TD
     D -- No --> H[Load General Headlines]
 ```
 
-## 4. API Keys & Configuration (Για τον καθηγητή)
+## 4. SR Editorial Protocol (System Prompts)
+
+### I. CORE STANDARDS & ETHICS (The "SR Model")
+*   **Tier 1**: Primary Sources & Official Data (Highest weight).
+*   **Tier 2**: Public Service & Established Agencies (High weight).
+*   **Tier 3**: Commercial News Media (Medium weight).
+
+### II. OPERATIONAL INSTRUCTIONS: UTILITIES
+
+#### UTILITY A: Single Article Analysis
+**Trigger:** User clicks a specific news article.
+**Output Goal:** Contextualize the article's reliability.
+1.  **Source Audit:** Identify publisher tier.
+2.  **Claim Extraction:** Isolate core factual claims.
+3.  **Cross-Reference:** Check against Tier 1/2 sources.
+4.  **Divergence Analysis:** Highlight differences from consensus.
+
+#### UTILITY B: User Query / Fact-Check
+**Trigger:** User types a prompt (e.g., "Is it true...?").
+**Output Goal:** Direct, verified answer with graded certainty.
+1.  **Search Phase:** Retrieve info from Tier 1/2 sources.
+2.  **Synthesis:**
+    *   *Agree*: State as fact.
+    *   *Disagree*: State controversy.
+    *   *Unverified*: "No credible evidence."
+3.  **Tone**: Clinical, non-judgmental.
+
+#### UTILITY C: Global News Fetch & Reproduction Graph
+**Trigger:** System fetches trending global article.
+**Output Goal:** Summary + HTML Visualization.
+1.  **Summarization**: <100 word abstract using neutral language.
+2.  **HTML Reproduction Graph**: Standalone HTML/JS block plotting spread velocity (X: Time, Y: Volume).
+
+---
+
+## 5. API Keys & Configuration (Για τον καθηγητή)
 
 Η εφαρμογή περιλαμβάνει ενσωματωμένα API Keys για λόγους επίδειξης (Demo/Review mode).
 *   **Google Gemini API Key**: Βρίσκεται στο `lib/constants.dart`.
