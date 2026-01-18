@@ -1,5 +1,5 @@
 <p align="center">
-  <iframe src="https://drive.google.com/file/d/1nQ_fD6lYEyZlnYvvaXBqZmC4vIzKmQaj/preview" width="640" height="480"></iframe>
+  <img src="./public/factual_logo.png" width="640" height="480"></img>
 </p>
 
 # Παρουσίαση εφαρμογής factual
@@ -87,7 +87,15 @@ graph TD
     D -- No --> H[Load General Headlines]
 ```
 
-## 4. SR Editorial Protocol (System Prompts)
+## 4. Firebase Architecture
+
+Firebase data is stored in a cloud database (**Cloud Firestore**), ensuring real-time synchronization and secure user profiling. User activity is effectively monitored through **Google Analytics** and **Firestore** to adapt the content feed.
+
+![Firebase Architecture](Firebase.png)
+
+---
+
+## 5. SR Editorial Protocol (System Prompts)
 
 ### I. CORE STANDARDS & ETHICS (The "SR Model")
 *   **Tier 1**: Primary Sources & Official Data (Highest weight).
@@ -122,7 +130,7 @@ graph TD
 
 ---
 
-## 5. API Keys & Configuration (Για τον καθηγητή)
+## 6. API Keys & Configuration (Για τον καθηγητή)
 
 Η εφαρμογή περιλαμβάνει ενσωματωμένα API Keys για λόγους επίδειξης (Demo/Review mode).
 *   **Google Gemini API Key**: Βρίσκεται στο `lib/constants.dart`.
