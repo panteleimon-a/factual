@@ -37,9 +37,6 @@ const CustomNavbar = ({isLoggedIn, setIsLoggedIn, handleLogout }) => {
 
   const [passError, setPassError] = useState(false);
   const [isActive, setIsActive] = useState(true);
-
-
-  const [passwordError, setPasswordError] = useState('');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [passwordCriteriaMet, setPasswordCriteriaMet] = useState(false);
   const [passwordCriteriaError, setPasswordCriteriaError] = useState('');
@@ -128,14 +125,6 @@ const CustomNavbar = ({isLoggedIn, setIsLoggedIn, handleLogout }) => {
   };
 
   const handleLoginModalShow = () => setShowLoginModal(true);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
 
   const [formData, setFormData] = useState({
     email: '',

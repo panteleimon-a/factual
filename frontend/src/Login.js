@@ -4,7 +4,6 @@ import { Modal, Button, Form } from 'react-bootstrap';
 const Login = ({isLoggedIn, setIsLoggedIn, handleLogout, showLoginModal, setShowLoginModal }) => {
   
   const handleLoginModalClose = () => setShowLoginModal(false);
-  const handleLoginModalShow = () => setShowLoginModal(true);
   const [isActive, setIsActive] = useState(true);
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState(false);
