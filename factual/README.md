@@ -87,9 +87,11 @@ graph TD
     D -- No --> H[Load General Headlines]
 ```
 
-## 4. Firebase Architecture
+> **Αναλυτική Τεκμηρίωση**: Για περισσότερες λεπτομέρειες σχετικά με τον αλγόριθμο, δείτε το έγγραφο [Algorithm Documentation](docs/feed_algorithm.md).
 
-Firebase data is stored in a cloud database (**Cloud Firestore**), ensuring real-time synchronization and secure user profiling. User activity is effectively monitored through **Google Analytics** and **Firestore** to adapt the content feed.
+## 4. Αρχιτεκτονική Firebase
+
+Τα δεδομένα του Firebase αποθηκεύονται σε μια βάση δεδομένων cloud (**Cloud Firestore**), διασφαλίζοντας συγχρονισμό σε πραγματικό χρόνο και ασφαλή δημιουργία προφίλ χρηστών. Η δραστηριότητα των χρηστών παρακολουθείται αποτελεσματικά μέσω των **Google Analytics** και του **Firestore** για την προσαρμογή της ροής περιεχομένου.
 
 ![Firebase Architecture](Firebase.png)
 
