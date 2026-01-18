@@ -94,7 +94,7 @@ graph TD
 
 Τα δεδομένα του Firebase αποθηκεύονται στο **Cloud Firestore**, ενώ η εφαρμογή χρησιμοποιεί **Firebase Anonymous Authentication**. Αυτό σημαίνει ότι δημιουργείται ένα μοναδικό, ανώνυμο προφίλ για κάθε χρήστη χωρίς να απαιτείται Login. Η δραστηριότητα (π.χ. ιστορικό αναζήτησης) καταγράφεται τοπικά (Local SQLite) και συγχρονίζεται με το Cloud μόλις επιτευχθεί σύνδεση, επιτρέποντας εξατομικευμένη ροή ειδήσεων.
 
-![Firebase Architecture](./assets/Firebase.png)
+![Firebase Architecture](/public/Firebase.png)
 
 ---
 
