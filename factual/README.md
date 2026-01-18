@@ -138,3 +138,11 @@ Firebase data is stored in a cloud database (**Cloud Firestore**), ensuring real
 *   **Firebase**: Το αρχείο `google-services.json` είναι ενσωματωμένο.
 
 Δεν απαιτείται καμία ενέργεια από πλευράς σας για την ενεργοποίηση των κλειδιών.
+
+---
+
+## 7. Repository Guidelines
+
+*   **Repository URL**: [https://github.com/panteleimon-a/factual](https://github.com/panteleimon-a/factual)
+*   **Android App Branch**: Ο κώδικας της Android εφαρμογής βρίσκεται στο **`main`** branch (και στο `android-app` branch).
+*   **Release Tag**: Η έκδοση που αντιστοιχεί στο `factual_release.apk` είναι το tag **`v1.0-demo`**.
