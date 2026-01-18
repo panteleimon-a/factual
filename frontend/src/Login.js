@@ -7,10 +7,6 @@ const Login = ({isLoggedIn, setIsLoggedIn, handleLogout, showLoginModal, setShow
   const [isActive, setIsActive] = useState(true);
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState(false);
-  const [showNotActiveModal, setNotActiveModal] = useState(false);
-  const handleNotActiveModalShow = () => {
-    setNotActiveModal(true);
-  }
 
   const handleLogin = async () => {
     
