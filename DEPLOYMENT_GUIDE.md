@@ -39,7 +39,13 @@ The DNS configuration should point to GitHub Pages:
 
 ```
 www.factual.gr → CNAME → panteleimon-a.github.io
+factual.gr → A records → 185.199.108.153
+                       → 185.199.109.153
+                       → 185.199.110.153
+                       → 185.199.111.153
 ```
+
+**Note**: Both www subdomain and apex domain should be configured for proper functionality. The CNAME file in the repository is set to `www.factual.gr`, which will be the primary domain.
 
 DNS propagation may take up to 48 hours, but typically completes within a few hours.
 
