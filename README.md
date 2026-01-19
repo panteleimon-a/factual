@@ -1,4 +1,4 @@
-# Factual - Fact-Checking Platform
+# factual - Fact-Checking Platform
 
 A production-ready fact-checking platform built with Django REST Framework backend and React frontend, featuring secure API endpoints and external model integration.
 
