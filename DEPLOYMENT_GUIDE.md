@@ -8,6 +8,9 @@ The GitHub Pages deployment infrastructure is **fully configured and operational
 - ✅ Latest successful deployment: 2026-01-19T08:54:08Z (Run #13)
 - ✅ Deployment branch: `gh-pages` (auto-updated by workflow)
 - ✅ Custom domain CNAME: `www.factual.gr`
+- ✅ Site verified working locally (Vite dev server)
+- ✅ Node.js dependencies installed successfully
+- ⚠️ **GitHub Pages needs to be enabled in repository settings**
 
 ## Making the Site Live
 
@@ -39,6 +42,28 @@ www.factual.gr → CNAME → panteleimon-a.github.io
 ```
 
 DNS propagation may take up to 48 hours, but typically completes within a few hours.
+
+## Local Development
+
+To run and test the site locally:
+
+```bash
+# Switch to the landing page branch
+git checkout landing-page-deployment
+
+# Install dependencies (first time only)
+npm install
+
+# Start the development server
+npm run dev
+
+# The site will be available at: http://localhost:5173/
+```
+
+The site is built with:
+- **Vite** - Fast development server and build tool
+- **Vanilla JavaScript** - No framework overhead
+- **Modern CSS** - Clean, responsive design
 
 ## Automatic Deployment
 
