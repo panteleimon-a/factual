@@ -105,4 +105,4 @@ docker-compose.override.yml
 # Build artifacts
 build/
 dist/
-*.egg-info/
+*.egg-info/*.apk
