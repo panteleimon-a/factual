@@ -77,7 +77,9 @@ User feedback → model updates
 
 ## SR Editorial Protocol
 
-factual applies a **tiered source credibility model** to every article:
+> *SR* stands for **Sveriges Radio** — the Swedish public broadcaster whose editorial and fact-checking standards served as the foundation for this model. Sveriges Radio is widely regarded as one of the most rigorous fact-checking organisations in Europe.
+
+factual applies a **tiered source credibility model** to every article, adapted from Sveriges Radio's sourcing guidelines:
 
 | Tier | Source Type | Weight |
 |---|---|---|
