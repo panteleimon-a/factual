@@ -89,13 +89,86 @@ The AI agents use this framework to cross-reference claims, flag divergence, and
 
 ---
 
+## Research Model (Backend — `dev`)
+
+> ⚠️ **Work in progress.** The Django backend in [`dev/apps/django-web`](../../tree/dev/apps/django-web) is the original research prototype. It is not yet fully integrated but documents the core scientific model.
+
+The central hypothesis: **you can simulate the fact-checking process algorithmically** by combining three signals on any piece of news.
+
+### 1. Timestamp-Based Root Detection
+
+Every news reproduction leaves a publication timestamp in the page's HTML `<meta>` tags. By scraping `article:published_time` and `article:modified_time` across all sources that cover a story, you can reconstruct a **propagation timeline** — finding the original article (the root) and mapping how it was reproduced, repackaged, or selectively edited downstream.
+
+```
+Article A  (t=0)  ← root
+   ├── Article B  (t+2h)  — copy, same sentiment
+   ├── Article C  (t+5h)  — copy, sentiment shifted negative
+   └── Article D  (t+11h) — copy, key claims removed
+```
+
+This directly answers: *"Who published this first, and what changed as it spread?"*
+
+### 2. Similarity Detection (TF-IDF + Cosine)
+
+Given a user query or article URL, the pipeline:
+1. Queries Google for related articles (headless Selenium, cycling user-agents to bypass bot detection)
+2. Scrapes full article text in parallel using a thread pool
+3. Runs **TF-IDF vectorisation** on the preprocessed corpus
+4. Computes **cosine similarity** between the query and each article
+
+This surfaces articles that are semantically equivalent to the input — including reproductions that rephrase but don't link back — **bypassing Google's ad-boosted ranking** by scoring on content, not SEO position.
+
+### 3. Sentiment Scoring (Fine-tuned BERT)
+
+Each article is passed through a fine-tuned **BERT sentiment model** (loaded via TensorFlow). The score is compared against the query's own sentiment:
+
+```
+Sentiment Match = 1 - |sentiment(article) - sentiment(query)|
+```
+
+A high sentiment divergence on an otherwise similar article flags **bias or editorial slant** — the same facts framed differently to provoke a different emotional response.
+
+### Combined Match Score
+
+The final ranking multiplies both signals:
+
+```
+Match = Cosine Similarity × Sentiment Match
+```
+
+This produces a ranked list of sources ordered by both *topical relevance* and *tonal alignment* — surfacing coverage that is both on-topic and emotionally consistent with the source material.
+
+```
+User submits text or URL
+         ↓
+ETL: tokenise, remove stopwords (NLTK)
+         ↓
+Google search → headless Selenium scrape (3 pages, parallel)
+         ↓
+TF-IDF cosine similarity  ←→  BERT sentiment delta
+         ↓
+Match score = similarity × sentiment alignment
+         ↓
+Ranked source list + URLs returned via Django REST API
+```
+
+### Why this matters
+
+Google's search results prioritise **paid promotion and domain authority**, not factual accuracy. A well-funded outlet can push an inaccurate story to position #1 while independent corrections sit on page 4. By scoring on content semantics and timestamp order rather than SEO rank, factual's model finds the truth of a story's propagation independent of who had the bigger ad budget.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Mobile | Flutter (Android, cross-platform) |
 | AI | Google Gemini 2.0 Flash |
+| Similarity | TF-IDF + Cosine Similarity (scikit-learn) |
+| Sentiment | Fine-tuned BERT (TensorFlow / HuggingFace) |
+| Scraping | Selenium + BeautifulSoup + ThreadPoolExecutor |
 | News Data | NewsData.io API |
+| Research Backend | Django REST Framework + Python |
 | Auth & Sync | Firebase Anonymous Auth + Cloud Firestore |
 | Local Storage | SQLite |
 | Maps | Google Maps API |
